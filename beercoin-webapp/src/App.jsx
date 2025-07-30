@@ -54,7 +54,7 @@ const AppContent = () => {
       case 'qr':
         return <QRCodeDisplay />;
       case 'scan':
-        return <QRCodeScanner />;
+        return <QRCodeScanner setActivePage={setActivePage} />;
       case 'send':
         return <SendBeer />;
       case 'wallet':

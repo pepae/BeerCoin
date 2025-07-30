@@ -6,8 +6,21 @@ import { STORAGE_KEYS, APP_CONFIG } from '../config';
 import contractServiceV2 from '../lib/contractServiceV2';
 import '../utils/cameraDebug.js'; // Load camera debug utilities
 
-const QRCodeScanner = () => {
+const QRCodeScanner = ({ setActivePage }) => {
   const { wallet, isRegistered, isTrusted, sendXDai } = useWallet();
+  // Poll for trusted status and navigate to dashboard if trusted
+  useEffect(() => {
+    if (isTrusted) return;
+    const interval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.location.pathname === '/scan') {
+        // Re-check isTrusted from context (it will update on wallet change)
+        if (isTrusted && setActivePage) {
+          setActivePage('dashboard');
+        }
+      }
+    }, 5000); // check every 5 seconds
+    return () => clearInterval(interval);
+  }, [isTrusted, setActivePage]);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState(null);
   const [error, setError] = useState('');
