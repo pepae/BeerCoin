@@ -30,8 +30,12 @@ const Registration = ({ setActivePage }) => {
         const isRegistered = await contractServiceV2.isUserRegistered(wallet.address);
         console.log(`[Registration] isRegistered for ${wallet.address}:`, isRegistered);
         if (isRegistered && isMounted) {
-          console.log('[Registration] User is now registered! Navigating to dashboard.');
-          if (setActivePage) setActivePage('dashboard');
+          console.log('[Registration] User is now registered! Reloading and navigating to dashboard.');
+          // Force a reload to update all state, then go to dashboard
+          setTimeout(() => {
+            if (setActivePage) setActivePage('dashboard');
+            window.location.reload();
+          }, 500);
         } else if (isMounted) {
           pollingRef.current = setTimeout(pollTrustedStatus, 3000);
         }
