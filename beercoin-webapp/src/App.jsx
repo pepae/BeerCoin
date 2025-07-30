@@ -15,25 +15,22 @@ const AppContent = () => {
   const { wallet, isRegistered } = useWallet();
   const [activePage, setActivePage] = useState('dashboard');
 
-  // Set initial page based on wallet and registration status
+  // Set initial page based on wallet and registration status, but don't override manual navigation
   useEffect(() => {
     if (!wallet) {
       // No wallet, show wallet creation
       return;
     }
-    
     // Check if URL has /register
     const path = window.location.pathname;
     if (path === '/register') {
       setActivePage('register');
       return;
     }
-    
-    if (!isRegistered) {
-      // Wallet exists but not registered, show registration
+    // Only auto-navigate if on dashboard or register (default pages)
+    if (!isRegistered && (activePage === 'dashboard' || activePage === 'register')) {
       setActivePage('register');
-    } else {
-      // Wallet exists and registered, show dashboard
+    } else if (isRegistered && (activePage === 'register' || activePage === 'dashboard')) {
       setActivePage('dashboard');
     }
   }, [wallet, isRegistered]);
@@ -48,7 +45,7 @@ const AppContent = () => {
       return <Registration />;
     }
     
-    
+
     switch (activePage) {
       case 'dashboard':
         return <Dashboard />;
