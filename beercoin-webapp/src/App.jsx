@@ -28,12 +28,12 @@ const AppContent = () => {
       return;
     }
     // Only auto-navigate if on dashboard or register (default pages)
-    if (!isRegistered && (activePage === 'dashboard' || activePage === 'register')) {
+    if (!isRegistered && activePage !== 'register') {
       setActivePage('register');
-    } else if (isRegistered && (activePage === 'register' || activePage === 'dashboard')) {
+    } else if (isRegistered && activePage !== 'dashboard') {
       setActivePage('dashboard');
     }
-  }, [wallet, isRegistered, activePage]);
+  }, [wallet, isRegistered]);
 
   // Render content based on wallet status and active page
   const renderContent = () => {
