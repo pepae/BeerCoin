@@ -42,7 +42,7 @@ const AppContent = () => {
     }
     
     if (!isRegistered && activePage !== 'wallet') {
-      return <Registration />;
+      return <Registration setActivePage={setActivePage} />;
     }
     
 
@@ -58,7 +58,7 @@ const AppContent = () => {
       case 'wallet':
         return <Dashboard />;
       case 'register':
-        return <Registration />;
+        return <Registration setActivePage={setActivePage} />;
       default:
         return <Dashboard />;
     }
