@@ -9,14 +9,22 @@ const QRCodeDisplay = ({ setActivePage }) => {
 
   // Poll for trusted status and auto-navigate to dashboard ONLY for new users
   useEffect(() => {
-    if (isTrusted) return;
+    if (isTrusted) {
+      console.debug('[QRCodeDisplay] User is already trusted, skipping polling.');
+      return;
+    }
+    console.debug('[QRCodeDisplay] Starting trusted status polling...');
     const interval = setInterval(() => {
-      // If user becomes trusted, auto-navigate to dashboard
+      console.debug('[QRCodeDisplay] Polling for trusted status. isTrusted:', isTrusted);
       if (isTrusted && setActivePage) {
+        console.debug('[QRCodeDisplay] User became trusted! Navigating to dashboard.');
         setActivePage('dashboard');
       }
     }, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      console.debug('[QRCodeDisplay] Stopping trusted status polling.');
+      clearInterval(interval);
+    };
   }, [isTrusted, setActivePage]);
 
   if (!wallet) {
