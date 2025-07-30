@@ -8,20 +8,13 @@ import '../utils/cameraDebug.js'; // Load camera debug utilities
 
 const QRCodeScanner = ({ setActivePage }) => {
   const { wallet, isRegistered, isTrusted, sendXDai } = useWallet();
-  // Poll for trusted status and navigate to dashboard if trusted
+  // Poll for trusted status (debug only, no auto-navigation)
   useEffect(() => {
-    if (isTrusted && setActivePage) {
-      setActivePage('dashboard');
-      return;
-    }
     const interval = setInterval(() => {
       console.debug('[QRCodeScanner] Polling for trusted status. isTrusted:', isTrusted);
-      if (isTrusted && setActivePage) {
-        setActivePage('dashboard');
-      }
     }, 5000); // check every 5 seconds
     return () => clearInterval(interval);
-  }, [isTrusted, setActivePage]);
+  }, [isTrusted]);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState(null);
   const [error, setError] = useState('');
