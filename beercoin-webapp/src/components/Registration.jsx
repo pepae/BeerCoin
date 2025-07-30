@@ -27,7 +27,8 @@ const Registration = ({ setActivePage }) => {
           console.log('[Registration] Initializing contract service...');
           await contractServiceV2.initialize(wallet);
         }
-        const isTrusted = await contractServiceV2.isTrusted(wallet.address);
+        const userInfo = await contractServiceV2.getUserInfo(wallet.address);
+        const isTrusted = userInfo?.isTrusted;
         console.log(`[Registration] Trusted status for ${wallet.address}:`, isTrusted);
         if (isTrusted && isMounted) {
           console.log('[Registration] User is now trusted! Navigating to dashboard.');
