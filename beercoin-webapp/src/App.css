@@ -1,0 +1,221 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* BeerCoin Theme - Light Mode */
+:root {
+  --radius: 0.625rem;
+  --background: #FFF8E1; /* Light cream background */
+  --foreground: #4A2511; /* Dark brown text */
+  --card: #FFFFFF;
+  --card-foreground: #4A2511;
+  --popover: #FFFFFF;
+  --popover-foreground: #4A2511;
+  --primary: #F2A900; /* Beer gold */
+  --primary-foreground: #4A2511;
+  --secondary: #8B4513; /* Brown */
+  --secondary-foreground: #FFFFFF;
+  --muted: #F5EFE0;
+  --muted-foreground: #8B7355;
+  --accent: #FF8C00; /* Dark orange */
+  --accent-foreground: #FFFFFF;
+  --destructive: #E53935;
+  --border: #D7C9AA;
+  --input: #EFE5CF;
+  --ring: #F2A900;
+  --chart-1: #F2A900;
+  --chart-2: #8B4513;
+  --chart-3: #FF8C00;
+  --chart-4: #D4AF37;
+  --chart-5: #CD7F32;
+  --sidebar: #F5EFE0;
+  --sidebar-foreground: #4A2511;
+  --sidebar-primary: #F2A900;
+  --sidebar-primary-foreground: #4A2511;
+  --sidebar-accent: #8B4513;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #D7C9AA;
+  --sidebar-ring: #F2A900;
+}
+
+/* BeerCoin Theme - Dark Mode */
+.dark {
+  --background: #2C1A0F; /* Dark brown background */
+  --foreground: #F5EFE0; /* Light cream text */
+  --card: #3D2817;
+  --card-foreground: #F5EFE0;
+  --popover: #3D2817;
+  --popover-foreground: #F5EFE0;
+  --primary: #F2A900; /* Beer gold */
+  --primary-foreground: #2C1A0F;
+  --secondary: #8B4513; /* Brown */
+  --secondary-foreground: #F5EFE0;
+  --muted: #4A2511;
+  --muted-foreground: #D7C9AA;
+  --accent: #FF8C00; /* Dark orange */
+  --accent-foreground: #F5EFE0;
+  --destructive: #F44336;
+  --border: #5E3A22;
+  --input: #4A2511;
+  --ring: #F2A900;
+  --chart-1: #F2A900;
+  --chart-2: #FF8C00;
+  --chart-3: #D4AF37;
+  --chart-4: #CD7F32;
+  --chart-5: #B87333;
+  --sidebar: #3D2817;
+  --sidebar-foreground: #F5EFE0;
+  --sidebar-primary: #F2A900;
+  --sidebar-primary-foreground: #2C1A0F;
+  --sidebar-accent: #8B4513;
+  --sidebar-accent-foreground: #F5EFE0;
+  --sidebar-border: #5E3A22;
+  --sidebar-ring: #F2A900;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* BeerCoin Custom Styles */
+.beer-gradient {
+  background: linear-gradient(135deg, #F2A900 0%, #FF8C00 100%);
+}
+
+.beer-card {
+  @apply rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md;
+}
+
+.beer-button {
+  @apply rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md active:scale-95;
+}
+
+.beer-button-secondary {
+  @apply rounded-full bg-secondary px-6 py-3 font-medium text-secondary-foreground shadow-sm transition-all hover:bg-secondary/90 hover:shadow-md active:scale-95;
+}
+
+.beer-input {
+  @apply rounded-full border border-input bg-background px-4 py-2 text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+
+.beer-container {
+  @apply mx-auto max-w-md px-4 py-8;
+}
+
+.beer-logo {
+  @apply text-4xl font-bold text-primary;
+}
+
+.beer-balance {
+  @apply text-3xl font-bold text-primary;
+}
+
+.beer-qr-container {
+  @apply mx-auto my-6 flex max-w-xs items-center justify-center rounded-xl bg-white p-4 shadow-md;
+}
+
+.beer-scanner-container {
+  @apply mx-auto my-6 overflow-hidden rounded-xl bg-black shadow-md;
+}
+
+.beer-bubble {
+  @apply absolute rounded-full bg-primary/20;
+  animation: float 8s infinite ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.beer-loading {
+  @apply relative h-6 w-32 overflow-hidden rounded-full bg-muted;
+}
+
+.beer-loading::after {
+  content: '';
+  @apply absolute left-0 top-0 h-full w-1/2 bg-primary;
+  animation: loading 1.5s infinite ease-in-out;
+}
+
+@keyframes loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.beer-toast {
+  @apply fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-card px-6 py-3 text-card-foreground shadow-lg;
+  animation: toast-in-out 3s ease-in-out forwards;
+}
+
+@keyframes toast-in-out {
+  0% {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+}
+

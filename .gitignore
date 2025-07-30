@@ -1,0 +1,237 @@
+# ================================
+# BeerCoin Project .gitignore
+# ================================
+
+# ================================
+# CRITICAL SECURITY - PRIVATE KEYS AND WALLETS
+# ================================
+# Admin and test wallet files
+*.wallet.json
+.wallet.json
+wallet.json
+test-wallets.json
+live-test-results.json
+
+# Private keys and mnemonics
+*.privatekey
+*.private
+*.mnemonic
+*.seed
+
+# Environment files with secrets
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# Hardhat network private keys
+hardhat.network.json
+
+# ================================
+# NODE.JS / NPM
+# ================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Package manager locks (comment out if you want to commit them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ================================
+# HARDHAT / BLOCKCHAIN DEVELOPMENT
+# ================================
+# Hardhat files
+cache/
+artifacts/
+/cache
+/artifacts
+
+# TypeChain files
+typechain/
+typechain-types/
+/typechain
+/typechain-types
+
+# Solidity coverage
+coverage/
+coverage.json
+/coverage
+/coverage.json
+
+# Hardhat Ignition deployments for local development
+ignition/deployments/chain-31337/
+ignition/deployments/chain-1337/
+ignition/deployments/localhost/
+
+# Gas reporter output
+gas-report.txt
+
+# ================================
+# BUILD OUTPUTS AND DIST
+# ================================
+# Build directories
+build/
+dist/
+out/
+
+# Vite build output
+/dist
+
+# Next.js build output
+.next/
+out/
+
+# React build
+build/
+
+# ================================
+# DEVELOPMENT AND EDITOR FILES
+# ================================
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# VS Code settings (uncomment if you want to ignore)
+# .vscode/
+
+# ================================
+# LOGS AND TEMPORARY FILES
+# ================================
+# Logs
+*.log
+logs/
+*.log.*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ================================
+# PROJECT SPECIFIC
+# ================================
+# Test results and outputs
+test-results.json
+deployment-results.json
+
+# Local development blockchain data
+.chaindata/
+
+# Deployment scripts output
+deployment-*.json
+deploy-*.log
+
+# User uploads (if sensitive)
+upload/
+uploads/
+
+# Configuration backups
+*.config.backup
+*.conf.backup
+
+# ================================
+# JUPYTER NOTEBOOKS (if any)
+# ================================
+.ipynb_checkpoints/
+
+# ================================
+# PYTHON (if any Python scripts)
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ================================
+# SECURITY AND SENSITIVE DATA
+# ================================
+# Any file containing 'secret', 'private', or 'key' in the name
+*secret*
+*private*
+*key*.json
+*keys*.json
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# API keys and tokens
+.env.keys
+api-keys.json
+tokens.json
+
+# Backup files that might contain sensitive data
+*.backup
+*.bak
+*.old
+
+# ================================
+# TESTING AND CI/CD
+# ================================
+# Test coverage
+.nyc_output/
+coverage/
+
+# Jest
+/coverage
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# ================================
+# DOCUMENTATION BUILDS
+# ================================
+# Documentation build outputs
+docs/_build/
+site/
+
+# ================================
+# MISCELLANEOUS
+# ================================
+# Local configuration files
+local.json
+local.config.js
+
+# Performance monitoring
+.clinic/
+
+# Lock files for security tools
+.auditignore
+
+# End of .gitignore

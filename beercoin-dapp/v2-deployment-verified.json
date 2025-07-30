@@ -1,0 +1,28 @@
+{
+  "network": "gnosis",
+  "chainId": 100,
+  "timestamp": "2025-07-29T19:21:34.921Z",
+  "deployer": "0xD63caa57701e7F4b4C54Bf29558c409c17Ed7434",
+  "contracts": {
+    "BeerCoinV2": {
+      "address": "0x2567c78AADF441cbee3FeE53a0D039023e0551c8",
+      "name": "BeerCoin",
+      "symbol": "BEER",
+      "totalSupply": "1000000.0",
+      "owner": "0xFB8E611686F21eC845AeD71F8ed942cA3C1150d9"
+    },
+    "BeerCoinDistributorV2": {
+      "address": "0xFB8E611686F21eC845AeD71F8ed942cA3C1150d9",
+      "owner": "0xD63caa57701e7F4b4C54Bf29558c409c17Ed7434",
+      "distributionActive": true,
+      "totalUsers": 1,
+      "totalTrustedUsers": 1,
+      "baseRewardRate": "0.001",
+      "referrerMultiplier": 150
+    }
+  },
+  "blockExplorerUrls": {
+    "BeerCoinV2": "https://gnosisscan.io/address/0x2567c78AADF441cbee3FeE53a0D039023e0551c8",
+    "BeerCoinDistributorV2": "https://gnosisscan.io/address/0xFB8E611686F21eC845AeD71F8ed942cA3C1150d9"
+  }
+}
