@@ -10,13 +10,14 @@ const QRCodeScanner = ({ setActivePage }) => {
   const { wallet, isRegistered, isTrusted, sendXDai } = useWallet();
   // Poll for trusted status and navigate to dashboard if trusted
   useEffect(() => {
-    if (isTrusted) return;
+    if (isTrusted && setActivePage) {
+      setActivePage('dashboard');
+      return;
+    }
     const interval = setInterval(() => {
-      if (typeof window !== 'undefined' && window.location.pathname === '/scan') {
-        // Re-check isTrusted from context (it will update on wallet change)
-        if (isTrusted && setActivePage) {
-          setActivePage('dashboard');
-        }
+      console.debug('[QRCodeScanner] Polling for trusted status. isTrusted:', isTrusted);
+      if (isTrusted && setActivePage) {
+        setActivePage('dashboard');
       }
     }, 5000); // check every 5 seconds
     return () => clearInterval(interval);
