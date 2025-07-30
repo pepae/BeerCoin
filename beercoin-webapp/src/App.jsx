@@ -50,7 +50,7 @@ const AppContent = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'qr':
-        return <QRCodeDisplay />;
+        return <QRCodeDisplay setActivePage={setActivePage} />;
       case 'scan':
         return <QRCodeScanner setActivePage={setActivePage} />;
       case 'send':

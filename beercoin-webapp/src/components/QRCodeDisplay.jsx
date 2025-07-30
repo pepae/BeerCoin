@@ -1,11 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { QR_CONFIG } from '../config';
 
-const QRCodeDisplay = () => {
+const QRCodeDisplay = ({ setActivePage }) => {
   const { wallet, isTrusted } = useWallet();
   const [copied, setCopied] = useState(false);
+
+  // Poll for trusted status and auto-navigate to dashboard ONLY for new users
+  useEffect(() => {
+    if (isTrusted) return;
+    const interval = setInterval(() => {
+      // If user becomes trusted, auto-navigate to dashboard
+      if (isTrusted && setActivePage) {
+        setActivePage('dashboard');
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isTrusted, setActivePage]);
 
   if (!wallet) {
     return null;
