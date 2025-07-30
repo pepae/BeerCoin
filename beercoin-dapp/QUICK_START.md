@@ -8,7 +8,7 @@
 
 ## 🔑 Admin Wallet Information
 
-**Private Key**: `0x21aab9ef55d0aa8aa92f965918225cfc6e001705510bd2dc6392e0e7afd95362`
+**Private Key**: ``
 **Mnemonic**: `decline shadow trick pledge faculty animal island swarm pause pact unusual frown`
 
 ⚠️ **IMPORTANT**: Keep this private key secure! It has admin control over both contracts.

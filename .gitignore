@@ -11,6 +11,7 @@
 wallet.json
 test-wallets.json
 live-test-results.json
+QUICK_START.md
 
 # Private keys and mnemonics
 *.privatekey
