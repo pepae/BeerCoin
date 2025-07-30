@@ -33,7 +33,7 @@ const AppContent = () => {
     } else if (isRegistered && (activePage === 'register' || activePage === 'dashboard')) {
       setActivePage('dashboard');
     }
-  }, [wallet, isRegistered]);
+  }, [wallet, isRegistered, activePage]);
 
   // Render content based on wallet status and active page
   const renderContent = () => {
