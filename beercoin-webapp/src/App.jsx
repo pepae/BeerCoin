@@ -48,6 +48,7 @@ const AppContent = () => {
       return <Registration />;
     }
     
+    
     switch (activePage) {
       case 'dashboard':
         return <Dashboard />;
