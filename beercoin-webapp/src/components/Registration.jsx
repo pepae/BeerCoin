@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import contractServiceV2 from '../lib/contractServiceV2';
 import { QRCodeSVG } from 'qrcode.react';
 import { STORAGE_KEYS, APP_CONFIG, QR_CONFIG } from '../config';
 
-const Registration = () => {
+const Registration = ({ setActivePage }) => {
   const { wallet } = useWallet();
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,6 +13,39 @@ const Registration = () => {
   const [success, setSuccess] = useState('');
   const [usernameAvailable, setUsernameAvailable] = useState(false);
   const [step, setStep] = useState(1);
+  const pollingRef = useRef();
+  // Poll for trusted status when on step 2 (QR code display)
+  useEffect(() => {
+    if (step !== 2 || !wallet?.address) return;
+    let isMounted = true;
+    let pollCount = 0;
+    const pollTrustedStatus = async () => {
+      try {
+        pollCount++;
+        console.log(`[Registration] Polling for trusted status... (attempt ${pollCount})`);
+        if (!contractServiceV2.distributorContract) {
+          console.log('[Registration] Initializing contract service...');
+          await contractServiceV2.initialize(wallet);
+        }
+        const isTrusted = await contractServiceV2.isTrusted(wallet.address);
+        console.log(`[Registration] Trusted status for ${wallet.address}:`, isTrusted);
+        if (isTrusted && isMounted) {
+          console.log('[Registration] User is now trusted! Navigating to dashboard.');
+          if (setActivePage) setActivePage('dashboard');
+        } else if (isMounted) {
+          pollingRef.current = setTimeout(pollTrustedStatus, 3000);
+        }
+      } catch (err) {
+        console.error('[Registration] Error polling trusted status:', err);
+        if (isMounted) pollingRef.current = setTimeout(pollTrustedStatus, 5000);
+      }
+    };
+    pollTrustedStatus();
+    return () => {
+      isMounted = false;
+      if (pollingRef.current) clearTimeout(pollingRef.current);
+    };
+  }, [step, wallet, setActivePage]);
 
   // Debounced username checking
   useEffect(() => {
