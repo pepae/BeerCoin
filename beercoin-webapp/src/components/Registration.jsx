@@ -22,22 +22,21 @@ const Registration = ({ setActivePage }) => {
     const pollTrustedStatus = async () => {
       try {
         pollCount++;
-        console.log(`[Registration] Polling for trusted status... (attempt ${pollCount})`);
+        console.log(`[Registration] Polling for registration status... (attempt ${pollCount})`);
         if (!contractServiceV2.distributorContract) {
           console.log('[Registration] Initializing contract service...');
           await contractServiceV2.initialize(wallet);
         }
-        const userInfo = await contractServiceV2.getUserInfo(wallet.address);
-        const isTrusted = userInfo?.isTrusted;
-        console.log(`[Registration] Trusted status for ${wallet.address}:`, isTrusted);
-        if (isTrusted && isMounted) {
-          console.log('[Registration] User is now trusted! Navigating to dashboard.');
+        const isRegistered = await contractServiceV2.isUserRegistered(wallet.address);
+        console.log(`[Registration] isRegistered for ${wallet.address}:`, isRegistered);
+        if (isRegistered && isMounted) {
+          console.log('[Registration] User is now registered! Navigating to dashboard.');
           if (setActivePage) setActivePage('dashboard');
         } else if (isMounted) {
           pollingRef.current = setTimeout(pollTrustedStatus, 3000);
         }
       } catch (err) {
-        console.error('[Registration] Error polling trusted status:', err);
+        console.error('[Registration] Error polling registration status:', err);
         if (isMounted) pollingRef.current = setTimeout(pollTrustedStatus, 5000);
       }
     };
