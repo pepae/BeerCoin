@@ -7,6 +7,10 @@ import path from 'path'
 export default defineConfig({
   base: '/BeerCoin/',
   plugins: [react(), tailwindcss()],
+  build: {
+    outDir: '../docs',
+    emptyOutDir: true,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
