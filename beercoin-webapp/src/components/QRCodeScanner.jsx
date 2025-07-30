@@ -4,6 +4,7 @@ import useContractData from '../hooks/useContractData';
 import { Html5Qrcode } from 'html5-qrcode';
 import { STORAGE_KEYS, APP_CONFIG } from '../config';
 import contractServiceV2 from '../lib/contractServiceV2';
+import '../utils/cameraDebug.js'; // Load camera debug utilities
 
 const QRCodeScanner = () => {
   const { wallet, isRegistered, isTrusted, sendXDai } = useWallet();
@@ -21,8 +22,24 @@ const QRCodeScanner = () => {
   useEffect(() => {
     // Clean up scanner on unmount
     return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop();
+      console.log('Component unmounting, cleaning up scanner...');
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch(console.error);
+          }
+          scannerRef.current.clear().catch(console.error);
+        } catch (err) {
+          console.error('Error during cleanup:', err);
+        }
+        scannerRef.current = null;
+      }
+      
+      // Clean up DOM elements
+      const scannerId = 'beer-qr-scanner';
+      const existingElement = document.getElementById(scannerId);
+      if (existingElement) {
+        existingElement.remove();
       }
     };
   }, []);
@@ -33,47 +50,148 @@ const QRCodeScanner = () => {
       setError('');
       setScannedData(null);
       
-      if (!scannerContainerRef.current) return;
+      // Check if we're on HTTPS or localhost (required for camera access)
+      const isSecure = window.location.protocol === 'https:' || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+      
+      if (!isSecure) {
+        throw new Error('Camera access requires HTTPS or localhost. Please use manual entry instead.');
+      }
+      
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access not supported by your browser. Please use manual entry instead.');
+      }
+      
+      // Wait a moment for the DOM to be ready if needed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (!scannerContainerRef.current) {
+        console.error('Scanner container ref not found, checking DOM...');
+        console.error('scannerContainerRef:', scannerContainerRef);
+        console.error('scanning state:', scanning);
+        throw new Error('Scanner container not found. Please try again.');
+      }
+      
+      console.log('Scanner container found:', scannerContainerRef.current);
       
       const scannerId = 'beer-qr-scanner';
       
-      // Create scanner container if it doesn't exist
-      if (!document.getElementById(scannerId)) {
-        const scannerElement = document.createElement('div');
-        scannerElement.id = scannerId;
-        scannerContainerRef.current.appendChild(scannerElement);
+      // Clear any existing scanner element
+      const existingElement = document.getElementById(scannerId);
+      if (existingElement) {
+        existingElement.remove();
       }
       
-      // Initialize scanner
+      // Create fresh scanner container
+      const scannerElement = document.createElement('div');
+      scannerElement.id = scannerId;
+      scannerElement.style.width = '100%';
+      scannerElement.style.maxWidth = '400px';
+      scannerElement.style.margin = '0 auto';
+      scannerElement.style.border = '2px solid #ddd';
+      scannerElement.style.borderRadius = '8px';
+      scannerElement.style.overflow = 'hidden';
+      scannerContainerRef.current.appendChild(scannerElement);
+      
+      // Test camera permissions first
+      console.log('Testing camera permissions...');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }
+        });
+        console.log('Camera permission granted');
+        stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+      } catch (permissionError) {
+        console.error('Camera permission error:', permissionError);
+        throw new Error('Camera permission denied. Please allow camera access in your browser settings and try again.');
+      }
+      
+      // Initialize scanner with better error handling
+      console.log('Initializing QR scanner...');
       scannerRef.current = new Html5Qrcode(scannerId);
       
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        showTorchButtonIfSupported: true,
+        showZoomSliderIfSupported: true,
+        defaultZoomValueIfSupported: 2,
       };
       
-      await scannerRef.current.start(
-        { facingMode: 'environment' },
-        config,
-        handleScanSuccess,
-        handleScanError
-      );
+      // Try different camera constraints
+      const cameraConstraints = [
+        { facingMode: 'environment' }, // Back camera
+        { facingMode: 'user' },        // Front camera
+        true                           // Any camera
+      ];
+      
+      let scannerStarted = false;
+      for (const constraint of cameraConstraints) {
+        try {
+          console.log('Trying camera constraint:', constraint);
+          await scannerRef.current.start(
+            constraint,
+            config,
+            handleScanSuccess,
+            handleScanError
+          );
+          scannerStarted = true;
+          console.log('Scanner started successfully');
+          break;
+        } catch (startError) {
+          console.warn('Failed with constraint:', constraint, startError);
+          continue;
+        }
+      }
+      
+      if (!scannerStarted) {
+        throw new Error('Unable to start camera with any available configuration. Please use manual entry.');
+      }
+      
     } catch (err) {
       console.error('Error starting scanner:', err);
-      setError('Failed to start camera. Please check permissions.');
+      setError(err.message || 'Failed to start camera. Please check permissions or use manual entry.');
       setScanning(false);
+      
+      // Clean up on error
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+        } catch (stopError) {
+          console.warn('Error stopping scanner during cleanup:', stopError);
+        }
+        scannerRef.current = null;
+      }
     }
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current && scannerRef.current.isScanning) {
+    console.log('Stopping scanner...');
+    if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+          console.log('Scanner stopped successfully');
+        }
+        await scannerRef.current.clear();
         scannerRef.current = null;
       } catch (err) {
         console.error('Error stopping scanner:', err);
+        // Force cleanup even if stop() fails
+        scannerRef.current = null;
       }
     }
+    
+    // Clean up DOM elements
+    const scannerId = 'beer-qr-scanner';
+    const existingElement = document.getElementById(scannerId);
+    if (existingElement) {
+      existingElement.remove();
+    }
+    
     setScanning(false);
   };
 
@@ -236,6 +354,23 @@ const QRCodeScanner = () => {
             Start Camera
           </button>
           
+          {/* Debug Camera Button */}
+          <button
+            className="beer-button-secondary w-full mb-4"
+            onClick={async () => {
+              console.log('🔍 Manual camera test...');
+              if (window.testCamera) {
+                const result = await window.testCamera();
+                setError(result ? 'Camera test successful!' : 'Camera test failed - check console for details');
+                setTimeout(() => setError(''), 3000);
+              } else {
+                setError('Debug utilities not loaded');
+              }
+            }}
+          >
+            Test Camera (Debug)
+          </button>
+          
           <div className="flex items-center justify-center my-4">
             <div className="flex-1 h-px bg-border"></div>
             <span className="px-4 text-muted-foreground text-sm">OR</span>
@@ -292,7 +427,13 @@ const QRCodeScanner = () => {
       
       {scanning && (
         <div>
-          <div className="beer-scanner-container" ref={scannerContainerRef}></div>
+          <div 
+            className="beer-scanner-container" 
+            ref={scannerContainerRef}
+            style={{ minHeight: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          >
+            {/* Scanner will be inserted here */}
+          </div>
           
           <button
             className="beer-button-secondary w-full mt-4"

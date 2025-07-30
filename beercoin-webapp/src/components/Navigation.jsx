@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 
 const Navigation = ({ activePage, setActivePage }) => {
-  const { wallet, isRegistered } = useWallet();
+  const { wallet, isRegistered, isTrusted } = useWallet();
   const [showTooltip, setShowTooltip] = useState(false);
 
   if (!wallet) {
