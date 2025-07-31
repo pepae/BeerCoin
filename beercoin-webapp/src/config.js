@@ -1,8 +1,8 @@
 // BeerCoin DApp Configuration
 
-// Contract addresses on Gnosis Chain (V2 CORRECTED ADDRESSES)
-export const BEERCOIN_ADDRESS = "0x2567c78AADF441cbee3FeE53a0D039023e0551c8";
-export const DISTRIBUTOR_ADDRESS = "0xFB8E611686F21eC845AeD71F8ed942cA3C1150d9";
+// Contract addresses on Gnosis Chain (V2 NEW DEPLOYMENT)
+export const BEERCOIN_ADDRESS = "0x9D8bEB1A27Da75528c3F32CA01CBf9620629D7d6";
+export const DISTRIBUTOR_ADDRESS = "0x5574Ee75c4AF90B7973d66c709cAd3eCC9485E51";
 
 // Network configuration
 export const NETWORK_CONFIG = {

@@ -18,9 +18,8 @@ contract BeerCoinV2 is ERC20, Ownable {
     event TokensBurned(address indexed from, uint256 amount);
     
     constructor(address initialOwner) ERC20("BeerCoin", "BEER") Ownable(initialOwner) {
-        // Mint initial supply to the owner
-        _mint(initialOwner, 1_000_000 * 10**18); // 1 million BEER initial supply
-        emit TokensMinted(initialOwner, 1_000_000 * 10**18);
+        // No initial supply minted - start with 0
+        emit TokensMinted(initialOwner, 0);
     }
     
     /**

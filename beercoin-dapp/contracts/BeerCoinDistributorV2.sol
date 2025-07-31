@@ -20,7 +20,7 @@ contract BeerCoinDistributorV2 is Ownable, ReentrancyGuard {
     
     // Distribution parameters
     uint256 public baseRewardRate = 1 * 10**15; // 0.001 BEER per second (base rate)
-    uint256 public referrerMultiplier = 150; // 1.5x multiplier (150/100)
+    uint256 public referrerMultiplier = 50; // 0.5x multiplier per referral (50/100)
     uint256 public constant MULTIPLIER_BASE = 100;
     bool public distributionActive = true;
     
