@@ -181,14 +181,10 @@ const Registration = ({ setActivePage }) => {
     }
   };
 
-  // Generate QR code data for trusted user to scan
+  // Generate QR code data for trusted user to scan - using URL format for consistency
   const generateQRData = () => {
-    return JSON.stringify({
-      type: 'registration',
-      address: wallet.address,
-      username: username,
-      timestamp: Date.now()
-    });
+    // Use URL format that includes registration info
+    return `https://pepae.github.io/BeerCoin/?reg=${wallet.address}&username=${encodeURIComponent(username)}&t=${Date.now()}`;
   };
 
   if (!wallet) {

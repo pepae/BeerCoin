@@ -209,14 +209,56 @@ const QRCodeScanner = ({ setActivePage }) => {
       
       // Try to parse the QR code data
       let parsedData;
-      try {
-        parsedData = JSON.parse(decodedText);
-      } catch (err) {
-        // If not JSON, check if it's a valid Ethereum address
-        if (/^0x[a-fA-F0-9]{40}$/.test(decodedText)) {
-          parsedData = { address: decodedText };
-        } else {
-          throw new Error('Invalid QR code format');
+      
+      // Check if it's a URL format (deeplink)
+      if (decodedText.startsWith('https://pepae.github.io/BeerCoin/')) {
+        try {
+          const url = new URL(decodedText);
+          
+          // Check if it's a registration URL
+          const regAddress = url.searchParams.get('reg');
+          const username = url.searchParams.get('username');
+          
+          if (regAddress && username) {
+            // Registration QR code
+            if (!/^0x[a-fA-F0-9]{40}$/.test(regAddress)) {
+              throw new Error('Invalid address in registration URL');
+            }
+            
+            parsedData = { 
+              address: regAddress,
+              username: decodeURIComponent(username),
+              type: 'registration'
+            };
+          } else {
+            // Regular referral QR code
+            const address = url.searchParams.get('ref');
+            const trusted = url.searchParams.get('trusted') === 'true';
+            
+            if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+              throw new Error('Invalid address in URL');
+            }
+            
+            parsedData = { 
+              address: address,
+              isTrusted: trusted,
+              type: 'deeplink'
+            };
+          }
+        } catch (urlError) {
+          throw new Error('Invalid URL format in QR code');
+        }
+      } else {
+        // Try JSON format (legacy support)
+        try {
+          parsedData = JSON.parse(decodedText);
+        } catch (jsonError) {
+          // If not JSON, check if it's a valid Ethereum address
+          if (/^0x[a-fA-F0-9]{40}$/.test(decodedText)) {
+            parsedData = { address: decodedText };
+          } else {
+            throw new Error('Invalid QR code format - must be URL, JSON, or Ethereum address');
+          }
         }
       }
       
