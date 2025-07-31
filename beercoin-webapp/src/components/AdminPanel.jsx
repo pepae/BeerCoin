@@ -284,6 +284,24 @@ const AdminPanel = () => {
     }
   };
 
+  const handleRemoveTrustedFromUser = async (userAddress, username) => {
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.removeTrustedUser(userAddress);
+      
+      if (result.success) {
+        showMessage(`Successfully removed trusted status from ${username}`);
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage(`Failed to remove trusted status from ${username}`, true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!wallet) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -537,6 +555,15 @@ const AdminPanel = () => {
                         Make Trusted
                       </button>
                     )}
+                    {searchResult.isTrusted && (
+                      <button
+                        onClick={() => handleRemoveTrustedFromUser(searchResult.address, searchResult.username)}
+                        disabled={loading}
+                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
+                      >
+                        Remove Trust
+                      </button>
+                    )}
                     <button
                       onClick={() => handleSendXDaiToUser(searchResult.address, searchResult.username)}
                       disabled={loading}
@@ -597,6 +624,32 @@ const AdminPanel = () => {
                       className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
                     >
                       {loading ? 'Adding...' : 'Add Trusted User'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Remove Trusted User */}
+              <div className="border border-gray-200 rounded-lg">
+                <div className="p-4 bg-gray-50 border-b border-gray-200">
+                  <h3 className="font-medium text-gray-900">Remove Trusted User</h3>
+                </div>
+                <div className="p-4">
+                  <form onSubmit={handleRemoveTrustedUser} className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="User Address (0x...)"
+                      value={removeTrustAddress}
+                      onChange={(e) => setRemoveTrustAddress(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading ? 'Removing...' : 'Remove Trusted User'}
                     </button>
                   </form>
                 </div>
@@ -754,6 +807,15 @@ const AdminPanel = () => {
                             className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
                           >
                             {loading ? '...' : 'Make Trusted'}
+                          </button>
+                        )}
+                        {user.isTrusted && (
+                          <button
+                            onClick={() => handleRemoveTrustedFromUser(user.address, user.username)}
+                            disabled={loading}
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
+                          >
+                            {loading ? '...' : 'Remove Trust'}
                           </button>
                         )}
                         <button
