@@ -137,12 +137,14 @@ const Dashboard = () => {
           </div>
           
           {/* Referral Information for Trusted Users */}
-          {isTrusted && userInfo && (
+          {isTrusted && (
             <>
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-muted-foreground">Referrals:</span>
-                  <span className="font-medium">{userInfo.referralCount || 0} users</span>
+                  <span className="font-medium">
+                    {userInfo ? (userInfo.referralCount || 0) : 'Loading...'} users
+                  </span>
                 </div>
               </div>
               
@@ -150,12 +152,22 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-muted-foreground">Issuance Multiplier:</span>
                   <span className="font-medium text-primary">
-                    {((userInfo.referralCount || 0) * 0.1 + 1).toFixed(1)}x
+                    {userInfo ? 
+                      ((userInfo.referralCount || 0) * 0.1 + 1).toFixed(1) + 'x' : 
+                      'Loading...'
+                    }
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Base rate + {((userInfo.referralCount || 0) * 0.1).toFixed(1)}x bonus from referrals
-                </p>
+                {userInfo && (
+                  <p className="text-xs text-muted-foreground">
+                    Base rate + {((userInfo.referralCount || 0) * 0.1).toFixed(1)}x bonus from referrals
+                  </p>
+                )}
+              </div>
+              
+              {/* Debug info - remove this later */}
+              <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
+                <strong>Debug:</strong> userInfo = {JSON.stringify(userInfo)}
               </div>
             </>
           )}
