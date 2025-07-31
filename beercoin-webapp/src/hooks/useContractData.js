@@ -41,8 +41,12 @@ const useContractData = () => {
         
         // Get user info if registered
         if (isRegistered) {
+          console.log('[useContractData] User is registered, fetching user info for:', wallet.address);
           const info = await contractServiceV2.getUserInfo(wallet.address);
+          console.log('[useContractData] Got user info:', info);
           setUserInfo(info);
+        } else {
+          console.log('[useContractData] User is not registered, skipping user info fetch');
         }
       } catch (err) {
         console.error('Error fetching contract data:', err);
@@ -85,13 +89,18 @@ const useContractData = () => {
 
   // Refresh user info
   const refreshUserInfo = async () => {
-    if (!wallet || !isRegistered) return;
+    if (!wallet || !isRegistered) {
+      console.log('[useContractData] refreshUserInfo: No wallet or not registered');
+      return;
+    }
     
     try {
+      console.log('[useContractData] Refreshing user info for:', wallet.address);
       const info = await contractServiceV2.getUserInfo(wallet.address);
+      console.log('[useContractData] Refreshed user info:', info);
       setUserInfo(info);
     } catch (err) {
-      console.error('Error refreshing user info:', err);
+      console.error('[useContractData] Error refreshing user info:', err);
     }
   };
 

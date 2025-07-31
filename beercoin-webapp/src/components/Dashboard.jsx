@@ -19,6 +19,11 @@ const Dashboard = () => {
     claimRewards,
     refreshBalances
   } = useContractData();
+
+  // Debug logging for userInfo
+  console.log('[Dashboard] userInfo:', userInfo);
+  console.log('[Dashboard] isTrusted:', isTrusted);
+  console.log('[Dashboard] isRegistered:', isRegistered);
   
   const [showWalletDetails, setShowWalletDetails] = useState(false);
   const [claiming, setClaiming] = useState(false);

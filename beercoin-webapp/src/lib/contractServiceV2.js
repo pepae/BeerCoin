@@ -93,10 +93,18 @@ class ContractServiceV2 {
 
   // Get user information
   async getUserInfo(address) {
+    console.log('[contractServiceV2] Getting user info for address:', address);
     try {
-      if (!this.distributorContract) return null;
+      if (!this.distributorContract) {
+        console.log('[contractServiceV2] No distributor contract available');
+        return null;
+      }
+      
+      console.log('[contractServiceV2] Trying getUserInfo function...');
       const userInfo = await this.distributorContract.getUserInfo(address);
-      return {
+      console.log('[contractServiceV2] getUserInfo success:', userInfo);
+      
+      const result = {
         username: userInfo.username,
         isTrusted: userInfo.isTrusted,
         isActive: userInfo.isActive,
@@ -106,12 +114,17 @@ class ContractServiceV2 {
         pendingRewards: ethers.formatEther(userInfo.pendingRewards),
         joinTime: Number(userInfo.joinTime)
       };
+      console.log('[contractServiceV2] Processed getUserInfo result:', result);
+      return result;
     } catch (error) {
-      console.error('Error getting user info:', error);
+      console.error('[contractServiceV2] Error getting user info:', error);
       // Fallback to direct users mapping
       try {
+        console.log('[contractServiceV2] Trying fallback users mapping...');
         const userInfo = await this.distributorContract.users(address);
-        return {
+        console.log('[contractServiceV2] users mapping success:', userInfo);
+        
+        const result = {
           username: userInfo.username,
           isTrusted: userInfo.isTrusted,
           isActive: userInfo.isActive,
@@ -121,8 +134,10 @@ class ContractServiceV2 {
           pendingRewards: '0', // Not available in users mapping
           joinTime: Number(userInfo.joinTime)
         };
+        console.log('[contractServiceV2] Processed users mapping result:', result);
+        return result;
       } catch (fallbackError) {
-        console.error('Error getting user info from users mapping:', fallbackError);
+        console.error('[contractServiceV2] Error getting user info from users mapping:', fallbackError);
         return null;
       }
     }
