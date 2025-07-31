@@ -576,7 +576,7 @@ const AdminPanel = () => {
             </h2>
             
             {/* Mobile-friendly user cards for small screens */}
-            <div className="block md:hidden space-y-4">
+            <div className="block md:hidden space-y-3">
               {allUsersWithDetails
                 .sort((a, b) => {
                   // Sort by trusted status first, then by username
@@ -584,92 +584,84 @@ const AdminPanel = () => {
                   return a.username.localeCompare(b.username);
                 })
                 .map((user, index) => (
-                  <div key={user.address} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div key={user.address} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                     {/* User Header */}
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center flex-wrap gap-2 mb-2">
-                          <span className="font-medium text-lg">{user.username}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center flex-wrap gap-1 mb-2">
+                          <span className="font-medium text-base truncate">{user.username}</span>
                           {user.isTrusted && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800 flex-shrink-0">
                               ⭐ Trusted
                             </span>
                           )}
                           {!user.isActive && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-red-100 text-red-800 flex-shrink-0">
                               Inactive
                             </span>
                           )}
                         </div>
-                        <div className="text-xs font-mono text-gray-600 break-all mb-2">
+                        <div className="text-xs font-mono text-gray-600 break-all">
                           {user.address}
                         </div>
                       </div>
                     </div>
                     
-                    {/* User Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
-                      <div>
-                        <span className="text-gray-600">Status:</span>
-                        <div className="mt-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                            user.isTrusted 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
+                    {/* User Stats - Compact */}
+                    <div className="flex justify-between items-center mb-3 text-xs">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <span className="text-gray-500">Status:</span>
+                          <span className={`ml-1 font-medium ${user.isTrusted ? 'text-green-600' : 'text-blue-600'}`}>
                             {user.isTrusted ? 'Trusted' : 'Regular'}
                           </span>
                         </div>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Referrals:</span>
-                        <div className="mt-1 font-semibold text-purple-600">
-                          {user.referralCount}
+                        <div>
+                          <span className="text-gray-500">Referrals:</span>
+                          <span className="ml-1 font-semibold text-purple-600">{user.referralCount}</span>
                         </div>
                       </div>
-                      <div className="col-span-2">
-                        <span className="text-gray-600">Total Earned:</span>
-                        <div className="mt-1 font-medium text-orange-600">
-                          {parseFloat(user.totalEarned).toFixed(4)} BEER
-                        </div>
+                      <div className="text-right">
+                        <div className="text-gray-500">Earned:</div>
+                        <div className="font-medium text-orange-600">{parseFloat(user.totalEarned).toFixed(2)} BEER</div>
                       </div>
                     </div>
                     
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2">
+                    {/* Action Buttons - Mobile optimized */}
+                    <div className="grid grid-cols-2 gap-2">
                       {!user.isTrusted && user.isActive && (
                         <button
                           onClick={() => handlePromoteToTrusted(user.address, user.username)}
                           disabled={loading}
-                          className="flex-1 min-w-0 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                          className="px-2 py-2 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50 font-medium"
                         >
-                          {loading ? 'Processing...' : 'Make Trusted'}
+                          {loading ? '...' : 'Make Trusted'}
                         </button>
                       )}
                       {user.isTrusted && (
                         <button
                           onClick={() => handleRemoveTrustedUser({ preventDefault: () => {}, target: { removeUserAddress: { value: user.address } } })}
                           disabled={loading}
-                          className="flex-1 min-w-0 px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                          className="px-2 py-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
                         >
-                          {loading ? 'Processing...' : 'Remove Trust'}
+                          {loading ? '...' : 'Remove Trust'}
                         </button>
                       )}
                       <button
                         onClick={() => handleSendXDaiToUser(user.address, user.username)}
                         disabled={loading}
-                        className="flex-1 min-w-0 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        className="px-2 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
                       >
-                        {loading ? 'Sending...' : 'Send 0.01 xDAI'}
+                        {loading ? '...' : '💰 0.01 xDAI'}
                       </button>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(user.address);
                           showMessage('Address copied to clipboard');
                         }}
-                        className="px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                        className="px-2 py-2 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors font-medium"
                       >
-                        Copy
+                        📋 Copy
                       </button>
                     </div>
                   </div>
