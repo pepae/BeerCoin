@@ -8,6 +8,7 @@ import Navigation from './components/Navigation';
 import SendBeer from './components/SendBeer';
 import QRCodeDisplay from './components/QRCodeDisplay';
 import QRCodeScanner from './components/QRCodeScanner';
+import Leaderboard from './components/Leaderboard';
 import TestMode from './components/TestMode';
 import './App.css';
 
@@ -49,6 +50,8 @@ const AppContent = () => {
     switch (activePage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'leaderboard':
+        return <Leaderboard />;
       case 'qr':
         return <QRCodeDisplay setActivePage={setActivePage} />;
       case 'scan':

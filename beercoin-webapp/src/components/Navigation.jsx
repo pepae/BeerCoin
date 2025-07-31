@@ -39,6 +39,24 @@ const Navigation = ({ activePage, setActivePage }) => {
         
         <button
           className={`p-3 rounded-full ${
+            activePage === 'leaderboard'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-foreground hover:bg-muted'
+          }`}
+          onClick={() => handleNavClick('leaderboard')}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+            <path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"></path>
+            <path d="M6 2L3 21h18L18 2H6z"></path>
+            <path d="M10 7h4"></path>
+            <path d="M10 11h4"></path>
+            <path d="M10 15h4"></path>
+          </svg>
+        </button>
+        
+        <button
+          className={`p-3 rounded-full ${
             activePage === 'qr'
               ? 'bg-primary text-primary-foreground'
               : 'text-foreground hover:bg-muted'
