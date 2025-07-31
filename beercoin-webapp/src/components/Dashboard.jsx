@@ -18,6 +18,7 @@ const Dashboard = () => {
     userInfo,
     baseRewardRate,
     referrerMultiplier,
+    multiplierBase,
     claimRewards,
     refreshBalances
   } = useContractData();
@@ -112,15 +113,15 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Issuance Multiplier:</span>
                   <span className="text-sm font-medium text-primary">
-                    {userInfo 
-                      ? `${((userInfo.referralCount || 0) * 0.1 + 1).toFixed(1)}x`
+                    {userInfo && referrerMultiplier && multiplierBase
+                      ? `${(1 + ((userInfo.referralCount || 0) * referrerMultiplier) / multiplierBase).toFixed(1)}x`
                       : 'Loading...'
                     }
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {userInfo 
-                    ? `Base rate + ${((userInfo.referralCount || 0) * 0.1).toFixed(1)}x bonus from referrals`
+                  {userInfo && referrerMultiplier && multiplierBase
+                    ? `Base rate + ${(((userInfo.referralCount || 0) * referrerMultiplier) / multiplierBase).toFixed(1)}x bonus from referrals`
                     : 'Loading multiplier information...'
                   }
                 </p>

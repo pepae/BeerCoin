@@ -17,6 +17,7 @@ const useContractData = () => {
   const [distributionActive, setDistributionActive] = useState(false);
   const [baseRewardRate, setBaseRewardRate] = useState('0.0');
   const [referrerMultiplier, setReferrerMultiplier] = useState(0);
+  const [multiplierBase, setMultiplierBase] = useState(100);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalTrustedUsers, setTotalTrustedUsers] = useState(0);
 
@@ -34,12 +35,14 @@ const useContractData = () => {
         setDistributionActive(active);
         
         // Get base reward rate and referrer multiplier
-        const [rate, multiplier] = await Promise.all([
+        const [rate, multiplier, base] = await Promise.all([
           contractServiceV2.getBaseRewardRate(),
-          contractServiceV2.getReferrerMultiplier()
+          contractServiceV2.getReferrerMultiplier(),
+          contractServiceV2.getMultiplierBase()
         ]);
         setBaseRewardRate(rate);
         setReferrerMultiplier(multiplier);
+        setMultiplierBase(base);
         
         // Get balances
         await refreshBalances();
@@ -179,6 +182,7 @@ const useContractData = () => {
     distributionActive,
     baseRewardRate,
     referrerMultiplier,
+    multiplierBase,
     totalUsers,
     totalTrustedUsers,
     refreshBalances,
