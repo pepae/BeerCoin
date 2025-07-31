@@ -3,11 +3,12 @@ import { useWallet } from '../contexts/WalletContext';
 import useContractData from '../hooks/useContractData';
 
 const SendBeer = () => {
-  const { wallet } = useWallet();
-  const { beerBalance, transferBeer } = useContractData();
+  const { wallet, balance } = useWallet();
+  const { beerBalance, transferBeer, transferXDai } = useContractData();
   
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
+  const [tokenType, setTokenType] = useState('BEER'); // 'BEER' or 'xDAI'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -48,7 +49,8 @@ const SendBeer = () => {
       return;
     }
     
-    if (amountValue > parseFloat(beerBalance)) {
+    const currentBalance = tokenType === 'BEER' ? parseFloat(beerBalance) : parseFloat(balance);
+    if (amountValue > currentBalance) {
       setError('Insufficient balance');
       return;
     }
@@ -62,9 +64,13 @@ const SendBeer = () => {
       setLoading(true);
       setError('');
       
-      await transferBeer(recipient, amount);
+      if (tokenType === 'BEER') {
+        await transferBeer(recipient, amount);
+      } else {
+        await transferXDai(recipient, amount);
+      }
       
-      setSuccess(`Successfully sent ${amount} BEER to ${recipient.substring(0, 6)}...${recipient.substring(recipient.length - 4)}`);
+      setSuccess(`Successfully sent ${amount} ${tokenType} to ${recipient.substring(0, 6)}...${recipient.substring(recipient.length - 4)}`);
       setRecipient('');
       setAmount('');
       setShowConfirm(false);
@@ -74,8 +80,8 @@ const SendBeer = () => {
         setSuccess('');
       }, 3000);
     } catch (err) {
-      console.error('Error sending BEER:', err);
-      setError(err.message || 'Failed to send BEER');
+      console.error(`Error sending ${tokenType}:`, err);
+      setError(err.message || `Failed to send ${tokenType}`);
     } finally {
       setLoading(false);
     }
@@ -83,13 +89,54 @@ const SendBeer = () => {
 
   return (
     <div className="beer-container">
-      <h2 className="text-2xl font-bold mb-4 text-center">Send BEER</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center">Send Tokens</h2>
       <p className="text-center text-muted-foreground mb-6">
-        Send BEER tokens to other users
+        Send BEER tokens or xDAI to other users
       </p>
       
       {!showConfirm ? (
         <form onSubmit={handleSubmit}>
+          {/* Token Type Selector */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Token Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className={`p-3 rounded-lg border text-center transition-colors ${
+                  tokenType === 'BEER' 
+                    ? 'bg-primary text-primary-foreground border-primary' 
+                    : 'bg-background border-border hover:bg-muted'
+                }`}
+                onClick={() => {
+                  setTokenType('BEER');
+                  setAmount(''); // Clear amount when switching
+                }}
+              >
+                <div className="font-medium">BEER</div>
+                <div className="text-xs opacity-75">
+                  Balance: {parseFloat(beerBalance).toFixed(4)}
+                </div>
+              </button>
+              <button
+                type="button"
+                className={`p-3 rounded-lg border text-center transition-colors ${
+                  tokenType === 'xDAI' 
+                    ? 'bg-primary text-primary-foreground border-primary' 
+                    : 'bg-background border-border hover:bg-muted'
+                }`}
+                onClick={() => {
+                  setTokenType('xDAI');
+                  setAmount(''); // Clear amount when switching
+                }}
+              >
+                <div className="font-medium">xDAI</div>
+                <div className="text-xs opacity-75">
+                  Balance: {parseFloat(balance).toFixed(4)}
+                </div>
+              </button>
+            </div>
+          </div>
+          
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Recipient Address</label>
             <input
@@ -107,24 +154,27 @@ const SendBeer = () => {
             <div className="relative">
               <input
                 type="text"
-                className="beer-input w-full pr-16"
+                className="beer-input w-full pr-20"
                 placeholder="0.0"
                 value={amount}
                 onChange={handleAmountChange}
                 required
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                <span className="text-muted-foreground">BEER</span>
+                <span className="text-muted-foreground">{tokenType}</span>
               </div>
             </div>
             <div className="flex justify-between mt-1">
               <span className="text-xs text-muted-foreground">
-                Balance: {parseFloat(beerBalance).toFixed(4)} BEER
+                Balance: {tokenType === 'BEER' 
+                  ? `${parseFloat(beerBalance).toFixed(4)} BEER`
+                  : `${parseFloat(balance).toFixed(4)} xDAI`
+                }
               </span>
               <button
                 type="button"
                 className="text-xs text-primary"
-                onClick={() => setAmount(beerBalance)}
+                onClick={() => setAmount(tokenType === 'BEER' ? beerBalance : balance)}
               >
                 Max
               </button>
@@ -162,7 +212,14 @@ const SendBeer = () => {
             <div className="mb-3">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Amount:</span>
-                <span className="font-medium">{amount} BEER</span>
+                <span className="font-medium">{amount} {tokenType}</span>
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Token:</span>
+                <span>{tokenType}</span>
               </div>
             </div>
             
@@ -187,7 +244,7 @@ const SendBeer = () => {
               onClick={handleConfirmSend}
               disabled={loading}
             >
-              {loading ? 'Sending...' : 'Send BEER'}
+              {loading ? `Sending...` : `Send ${tokenType}`}
             </button>
           </div>
           

@@ -133,15 +133,39 @@ const useContractData = () => {
     if (!wallet) throw new Error('No wallet found');
     
     try {
-      const tx = await contractServiceV2.transferBeer(to, amount);
-      await tx.wait();
+      const result = await contractServiceV2.sendBeer(to, amount);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
       
       // Refresh balances
       await refreshBalances();
       
-      return tx;
+      return result;
     } catch (err) {
       console.error('Error transferring BEER:', err);
+      throw err;
+    }
+  };
+
+  // Transfer xDAI
+  const transferXDai = async (to, amount) => {
+    if (!wallet) throw new Error('No wallet found');
+    
+    try {
+      const result = await contractServiceV2.sendXDai(to, amount);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      // Refresh balances
+      await refreshBalances();
+      
+      return result;
+    } catch (err) {
+      console.error('Error transferring xDAI:', err);
       throw err;
     }
   };
@@ -160,7 +184,8 @@ const useContractData = () => {
     refreshBalances,
     refreshUserInfo,
     claimRewards,
-    transferBeer
+    transferBeer,
+    transferXDai
   };
 };
 
