@@ -13,6 +13,8 @@ const Registration = ({ setActivePage }) => {
   const [success, setSuccess] = useState('');
   const [usernameAvailable, setUsernameAvailable] = useState(false);
   const [step, setStep] = useState(1);
+  const [showFullAddress, setShowFullAddress] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
   const pollingRef = useRef();
   // Poll for trusted status when on step 2 (QR code display)
   useEffect(() => {
@@ -160,6 +162,25 @@ const Registration = ({ setActivePage }) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(wallet.address);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy address:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = wallet.address;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
   // Generate QR code data for trusted user to scan
   const generateQRData = () => {
     return JSON.stringify({
@@ -255,8 +276,48 @@ const Registration = ({ setActivePage }) => {
             <div className="mb-3">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Your Address:</span>
-                <span className="font-mono">{formatAddress(wallet.address)}</span>
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="font-mono text-sm cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => setShowFullAddress(!showFullAddress)}
+                    title="Click to toggle full address"
+                  >
+                    {showFullAddress ? wallet.address : formatAddress(wallet.address)}
+                  </span>
+                  <button
+                    onClick={copyAddress}
+                    className="text-xs px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded transition-colors"
+                    title="Copy full address"
+                  >
+                    {copySuccess ? '✓ Copied!' : '📋 Copy'}
+                  </button>
+                </div>
               </div>
+            </div>
+          </div>
+          
+          <div className="beer-card mb-6 bg-primary/5 border-primary/20">
+            <h4 className="text-sm font-medium mb-2 text-primary">💡 Important</h4>
+            <p className="text-sm text-muted-foreground mb-3">
+              Save your wallet address somewhere safe. You'll need it to receive BEER tokens and for future reference.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={wallet.address}
+                readOnly
+                className="flex-1 px-3 py-2 bg-background border border-border rounded font-mono text-sm"
+              />
+              <button
+                onClick={copyAddress}
+                className={`px-4 py-2 rounded font-medium transition-colors ${
+                  copySuccess 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                }`}
+              >
+                {copySuccess ? '✓ Copied!' : '📋 Copy Address'}
+              </button>
             </div>
           </div>
           
