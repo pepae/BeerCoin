@@ -22,7 +22,7 @@ export const APP_CONFIG = {
   appName: "BeerCoin",
   walletStorageKey: "beercoin_wallet",
   refreshInterval: 10000, // 10 seconds for balance updates
-  gasAmount: "0.001", // Amount of xDAI to send for gas
+  gasAmount: "0.002", // Amount of xDAI to send for gas
   pollingInterval: 5000, // 5 seconds for polling updates
 };
 
