@@ -455,6 +455,38 @@ class ContractServiceV2 {
       return null;
     }
   }
+
+  // Get all users with their details (admin helper)
+  async getAllUsersWithDetails() {
+    try {
+      if (!this.distributorContract) return [];
+      
+      const totalUsers = await this.getTotalUsers();
+      const allUsersDetails = [];
+      
+      for (let i = 0; i < totalUsers; i++) {
+        try {
+          const userAddress = await this.distributorContract.allUsers(i);
+          const userInfo = await this.getUserInfo(userAddress);
+          
+          if (userInfo) {
+            allUsersDetails.push({
+              address: userAddress,
+              ...userInfo
+            });
+          }
+        } catch (error) {
+          console.error(`Error getting user at index ${i}:`, error);
+          // Continue with next user
+        }
+      }
+      
+      return allUsersDetails;
+    } catch (error) {
+      console.error('Error getting all users with details:', error);
+      return [];
+    }
+  }
 }
 
 // Create and export singleton instance

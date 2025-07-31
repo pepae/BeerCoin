@@ -17,6 +17,7 @@ const AdminPanel = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalTrustedUsers, setTotalTrustedUsers] = useState(0);
   const [allTrustedUsers, setAllTrustedUsers] = useState([]);
+  const [allUsersWithDetails, setAllUsersWithDetails] = useState([]);
 
   // Form states
   const [trustUserAddress, setTrustUserAddress] = useState('');
@@ -62,7 +63,8 @@ const AdminPanel = () => {
         base,
         totalUsersCount,
         trustedCount,
-        trustedUsers
+        trustedUsers,
+        usersWithDetails
       ] = await Promise.all([
         contractServiceV2.isDistributionActive(),
         contractServiceV2.getBaseRewardRate(),
@@ -70,7 +72,8 @@ const AdminPanel = () => {
         contractServiceV2.getMultiplierBase(),
         contractServiceV2.getTotalUsers(),
         contractServiceV2.getTotalTrustedUsers(),
-        contractServiceV2.getAllTrustedUsers()
+        contractServiceV2.getAllTrustedUsers(),
+        contractServiceV2.getAllUsersWithDetails()
       ]);
 
       setDistributionActive(active);
@@ -80,6 +83,7 @@ const AdminPanel = () => {
       setTotalUsers(totalUsersCount);
       setTotalTrustedUsers(trustedCount);
       setAllTrustedUsers(trustedUsers);
+      setAllUsersWithDetails(usersWithDetails);
     } catch (err) {
       console.error('Error loading contract data:', err);
       setError('Failed to load contract data');
@@ -239,6 +243,24 @@ const AdminPanel = () => {
     } catch (err) {
       showMessage('Failed to search user', true);
       setSearchResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePromoteToTrusted = async (userAddress, username) => {
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.addTrustedUser(userAddress, username);
+      
+      if (result.success) {
+        showMessage(`Successfully promoted ${username} to trusted user`);
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to promote user to trusted', true);
     } finally {
       setLoading(false);
     }
@@ -528,17 +550,153 @@ const AdminPanel = () => {
           </div>
         </div>
 
-        {/* Trusted Users List */}
-        {allTrustedUsers.length > 0 && (
+        {/* All Users List */}
+        {allUsersWithDetails.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">⭐ Trusted Users ({allTrustedUsers.length})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allTrustedUsers.map((address, index) => (
-                <div key={index} className="p-3 border border-gray-200 rounded-lg">
-                  <p className="font-mono text-sm text-gray-600 break-all">{address}</p>
-                </div>
-              ))}
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              👥 All Users ({allUsersWithDetails.length})
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold">Username</th>
+                    <th className="text-left py-3 px-4 font-semibold">Address</th>
+                    <th className="text-left py-3 px-4 font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold">Referrals</th>
+                    <th className="text-left py-3 px-4 font-semibold">Total Earned</th>
+                    <th className="text-left py-3 px-4 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsersWithDetails
+                    .sort((a, b) => {
+                      // Sort by trusted status first, then by username
+                      if (a.isTrusted !== b.isTrusted) return b.isTrusted - a.isTrusted;
+                      return a.username.localeCompare(b.username);
+                    })
+                    .map((user, index) => (
+                    <tr key={user.address} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center">
+                          <span className="font-medium">{user.username}</span>
+                          {user.isTrusted && (
+                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                              ⭐ Trusted
+                            </span>
+                          )}
+                          {!user.isActive && (
+                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-sm text-gray-600 break-all">
+                          {user.address.substring(0, 6)}...{user.address.substring(user.address.length - 4)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col space-y-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                            user.isTrusted 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {user.isTrusted ? 'Trusted User' : 'Regular User'}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                            user.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="font-semibold text-purple-600">
+                          {user.referralCount}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-medium text-orange-600">
+                          {parseFloat(user.totalEarned).toFixed(4)} BEER
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col space-y-2">
+                          {!user.isTrusted && user.isActive && (
+                            <button
+                              onClick={() => handlePromoteToTrusted(user.address, user.username)}
+                              disabled={loading}
+                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                            >
+                              {loading ? '...' : 'Make Trusted'}
+                            </button>
+                          )}
+                          {user.isTrusted && (
+                            <button
+                              onClick={() => handleRemoveTrustedUser({ preventDefault: () => {}, target: { removeUserAddress: { value: user.address } } })}
+                              disabled={loading}
+                              className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                              {loading ? '...' : 'Remove Trust'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(user.address);
+                              showMessage('Address copied to clipboard');
+                            }}
+                            className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                          >
+                            Copy Address
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            
+            {/* Summary Stats */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">
+                  {allUsersWithDetails.length}
+                </div>
+                <div className="text-sm text-blue-600">Total Users</div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {allUsersWithDetails.filter(u => u.isTrusted).length}
+                </div>
+                <div className="text-sm text-green-600">Trusted Users</div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {allUsersWithDetails.reduce((sum, u) => sum + u.referralCount, 0)}
+                </div>
+                <div className="text-sm text-purple-600">Total Referrals</div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {allUsersWithDetails.reduce((sum, u) => sum + parseFloat(u.totalEarned), 0).toFixed(2)}
+                </div>
+                <div className="text-sm text-orange-600">Total BEER Earned</div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Loading state for users */}
+        {allUsersWithDetails.length === 0 && !loading && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">👥 All Users</h2>
+            <p className="text-gray-600 text-center py-8">No users found or still loading user data...</p>
           </div>
         )}
       </div>
