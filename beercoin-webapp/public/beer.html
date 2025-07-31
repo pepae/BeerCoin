@@ -273,21 +273,13 @@
                 
                 console.log('Physics world created successfully');
                 
-                // Set up particle system (following the demo pattern)
+                // Set up particle system (unified system for both beer and foam)
                 const particleSystemDef = new this.b2ParticleSystemDef();
-                particleSystemDef.set_radius(0.15); // Slightly larger radius for better collision
-                particleSystemDef.set_density(1.0); // Standard density for beer
-                this.beerParticleSystem = this.world.CreateParticleSystem(particleSystemDef);
-                this.beerParticleSystem.SetMaxParticleCount(5000); // Set max count like demo
+                particleSystemDef.set_radius(0.15); // Standard radius for all particles
+                this.particleSystem = this.world.CreateParticleSystem(particleSystemDef);
+                this.particleSystem.SetMaxParticleCount(8000); // Higher limit for both types
                 
-                // Foam particle system (separate for different properties)
-                const foamParticleSystemDef = new this.b2ParticleSystemDef();
-                foamParticleSystemDef.set_radius(0.12); // Even smaller for foam
-                foamParticleSystemDef.set_density(0.3); // Much lighter density for foam to float
-                this.foamParticleSystem = this.world.CreateParticleSystem(foamParticleSystemDef);
-                this.foamParticleSystem.SetMaxParticleCount(2000);
-                
-                console.log('Particle systems created with density-based buoyancy configuration');
+                console.log('Unified particle system created for beer and foam');
             }
 
             createGlass() {
@@ -439,15 +431,15 @@
             }
 
             pourBeer() {
-                console.log('pourBeer called - creating particle groups like the demo');
+                console.log('pourBeer called - creating beer particle groups');
                 
-                // Create particle groups (following the liquidfun.js-demo pattern)
+                // Create particle groups (same physics for both beer and foam)
                 for (let i = 0; i < 5; i++) {
                     try {
                         const color = new this.b2ParticleColor(255, 193, 7, 255); // Golden beer color
-                        const flags = 0; // Default flags like demo
+                        const flags = 0; // Standard water particles
                         
-                        // Create particle group definition (like demo)
+                        // Create particle group definition
                         const pgd = new this.b2ParticleGroupDef();
                         const shape = new this.b2CircleShape();
                         
@@ -463,35 +455,35 @@
                         pgd.set_color(color);
                         pgd.set_flags(flags);
                         
-                        // Create the particle group
-                        const group = this.beerParticleSystem.CreateParticleGroup(pgd);
+                        // Create the particle group in the unified system
+                        const group = this.particleSystem.CreateParticleGroup(pgd);
                         
-                        console.log(`Created particle group ${i} at (${x.toFixed(1)}, ${y.toFixed(1)}) with radius ${radius.toFixed(2)}`);
+                        console.log(`Created beer group ${i} at (${x.toFixed(1)}, ${y.toFixed(1)}) with radius ${radius.toFixed(2)}`);
                         
                     } catch (e) {
-                        console.error('Failed to create particle group', i, ':', e);
+                        console.error('Failed to create beer particle group', i, ':', e);
                         break;
                     }
                 }
                 
-                console.log('Total particles after pouring:', this.beerParticleSystem.GetParticleCount());
+                console.log('Total particles after pouring beer:', this.particleSystem.GetParticleCount());
             }
 
             addFoam() {
-                console.log('addFoam called - creating foam particle groups like beer');
+                console.log('addFoam called - creating white foam particle groups');
                 
-                // Create particle groups (following the same pattern as beer but lighter)
+                // Create particle groups (same physics as beer, different color)
                 for (let i = 0; i < 8; i++) { // Fewer groups than beer for thinner layer
                     try {
                         const color = new this.b2ParticleColor(255, 255, 255, 200 + Math.random() * 55); // White foam with variation
-                        const flags = this.b2_elasticParticle | this.b2_viscousParticle; // Elastic and viscous for floating behavior
+                        const flags = 0; // Same physics as beer particles
                         
-                        // Create particle group definition (like beer)
+                        // Create particle group definition
                         const pgd = new this.b2ParticleGroupDef();
                         const shape = new this.b2CircleShape();
                         
-                        // Smaller radius for foam - lighter particles
-                        const radius = 0.3 + Math.random() * 0.2; // Smaller than beer particles
+                        // Same size as beer particles for proper interaction
+                        const radius = 0.4 + Math.random() * 0.2; // Similar to beer
                         const x = (Math.random() - 0.5) * 5; // Spread across glass width
                         const y = 22 + i * 0.8; // Start above glass, closer spacing for thin layer
                         
@@ -502,8 +494,8 @@
                         pgd.set_color(color);
                         pgd.set_flags(flags);
                         
-                        // Create the particle group
-                        const group = this.foamParticleSystem.CreateParticleGroup(pgd);
+                        // Create the particle group in the same system as beer
+                        const group = this.particleSystem.CreateParticleGroup(pgd);
                         
                         console.log(`Created foam group ${i} at (${x.toFixed(1)}, ${y.toFixed(1)}) with radius ${radius.toFixed(2)}`);
                         
@@ -513,7 +505,7 @@
                     }
                 }
                 
-                console.log('Total foam particles after adding:', this.foamParticleSystem.GetParticleCount());
+                console.log('Total particles after adding foam:', this.particleSystem.GetParticleCount());
             }
 
             fillGlassWithBeer() {
@@ -557,8 +549,8 @@
                             pgd.set_color(color);
                             pgd.set_flags(0);
                             
-                            // Create the particle group
-                            const group = this.beerParticleSystem.CreateParticleGroup(pgd);
+                            // Create the particle group in unified system
+                            const group = this.particleSystem.CreateParticleGroup(pgd);
                             particleCount++;
                             
                         } catch (e) {
@@ -569,7 +561,7 @@
                 }
                 
                 console.log(`Created ${particleCount} beer particles in grid pattern`);
-                console.log('Total beer particles:', this.beerParticleSystem.GetParticleCount());
+                console.log('Total beer particles:', this.particleSystem.GetParticleCount());
             }
 
             addFoamLayer() {
@@ -597,7 +589,7 @@
                                 255, 
                                 180 + Math.random() * 40
                             );
-                            const flags = this.b2_elasticParticle | this.b2_viscousParticle; // Elastic and viscous for floating behavior
+                            const flags = 0; // Same physics as beer particles
                             
                             // Create particle group definition
                             const pgd = new this.b2ParticleGroupDef();
@@ -615,8 +607,8 @@
                             pgd.set_color(color);
                             pgd.set_flags(flags);
                             
-                            // Create the particle group
-                            const group = this.foamParticleSystem.CreateParticleGroup(pgd);
+                            // Create the particle group in unified system
+                            const group = this.particleSystem.CreateParticleGroup(pgd);
                             particleCount++;
                             
                         } catch (e) {
@@ -627,16 +619,12 @@
                 }
                 
                 console.log(`Created ${particleCount} foam particle groups in grid pattern`);
-                console.log('Total foam particles:', this.foamParticleSystem.GetParticleCount());
+                console.log('Total foam particles:', this.particleSystem.GetParticleCount());
             }
 
             resetGlass() {
-                // Destroy all particles
-                this.beerParticleSystem.DestroyParticlesInShape(
-                    new this.b2PolygonShape(), 
-                    new this.b2Transform(new this.b2Vec2(0, 0), new this.b2Rot(0))
-                );
-                this.foamParticleSystem.DestroyParticlesInShape(
+                // Destroy all particles in the unified system
+                this.particleSystem.DestroyParticlesInShape(
                     new this.b2PolygonShape(), 
                     new this.b2Transform(new this.b2Vec2(0, 0), new this.b2Rot(0))
                 );
@@ -673,11 +661,8 @@
                 // Draw glass outline
                 this.drawGlass();
 
-                // Draw beer particles
-                this.drawParticles(this.beerParticleSystem, '#FFC107'); // Golden beer
-
-                // Draw foam particles
-                this.drawParticles(this.foamParticleSystem, '#FFFFFF'); // White foam
+                // Draw all particles from the unified system (each with their own color)
+                this.drawAllParticles();
 
                 // Update debug info
                 this.updateDebugInfo();
@@ -733,6 +718,85 @@
                 this.ctx.moveTo(topLeft.x + 10, topLeft.y);
                 this.ctx.lineTo(bottomLeft.x + 5, bottomLeft.y - 50);
                 this.ctx.stroke();
+            }
+
+            drawAllParticles() {
+                const particleCount = this.particleSystem.GetParticleCount();
+                if (particleCount === 0) return;
+
+                console.log(`Drawing ${particleCount} particles with individual colors`);
+                
+                try {
+                    // Get position and color buffers
+                    const posOffset = this.particleSystem.GetPositionBuffer();
+                    const colorOffset = this.particleSystem.GetColorBuffer();
+                    
+                    if (posOffset && posOffset.e !== undefined && colorOffset && colorOffset.e !== undefined) {
+                        console.log('Found position and color buffers');
+                        
+                        // Read position and color data
+                        const positions = new Float32Array(Module.HEAPU8.buffer, posOffset.e, particleCount * 2);
+                        const colors = new Uint8Array(Module.HEAPU8.buffer, colorOffset.e, particleCount * 4); // RGBA
+                        
+                        let renderedCount = 0;
+                        for (let i = 0; i < particleCount; i++) {
+                            // Get physics coordinates
+                            const physX = positions[i * 2];
+                            const physY = positions[i * 2 + 1];
+                            
+                            // Get particle color
+                            const r = colors[i * 4];
+                            const g = colors[i * 4 + 1];
+                            const b = colors[i * 4 + 2];
+                            const a = colors[i * 4 + 3];
+                            
+                            // Convert to canvas coordinates
+                            const canvasPos = this.worldToCanvas({ x: physX, y: physY });
+                            
+                            // Check if particle is visible
+                            if (canvasPos.x >= -100 && canvasPos.x <= this.canvas.width + 100 &&
+                                canvasPos.y >= -100 && canvasPos.y <= this.canvas.height + 100) {
+                                
+                                // Set particle color
+                                this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
+                                this.ctx.strokeStyle = `rgba(${Math.max(0, r-20)}, ${Math.max(0, g-20)}, ${Math.max(0, b-20)}, ${a/255})`;
+                                this.ctx.lineWidth = 1;
+                                
+                                this.ctx.beginPath();
+                                this.ctx.arc(canvasPos.x, canvasPos.y, 6, 0, Math.PI * 2);
+                                this.ctx.fill();
+                                this.ctx.stroke();
+                                renderedCount++;
+                                
+                                // Debug output for first few particles
+                                if (i < 3) {
+                                    console.log(`Particle ${i}: pos(${physX.toFixed(1)}, ${physY.toFixed(1)}) color(${r},${g},${b},${a}) -> canvas(${canvasPos.x.toFixed(0)}, ${canvasPos.y.toFixed(0)})`);
+                                }
+                            }
+                        }
+                        
+                        console.log(`✅ Successfully rendered ${renderedCount}/${particleCount} particles with individual colors`);
+                        return; // Success - exit early
+                        
+                    } else {
+                        console.log('Position or color buffer offset not available');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error accessing particle data:', error);
+                }
+                
+                // Fallback: Draw test particles to verify rendering works
+                console.log('Drawing test particles as fallback...');
+                this.ctx.fillStyle = '#FF0000'; // Red for visibility
+                
+                // Draw test particles at known positions
+                for (let i = 0; i < 3; i++) {
+                    const testPos = this.worldToCanvas({ x: i * 2 - 2, y: 10 + i });
+                    this.ctx.beginPath();
+                    this.ctx.arc(testPos.x, testPos.y, 10, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
             }
 
             drawParticles(particleSystem, color) {
@@ -816,8 +880,7 @@
                     `X: ${this.gravity.x.toFixed(2)}, Y: ${this.gravity.y.toFixed(2)}` : 
                     'Not available (use mouse)';
                 
-                const totalParticles = this.beerParticleSystem.GetParticleCount() + 
-                                     this.foamParticleSystem.GetParticleCount();
+                const totalParticles = this.particleSystem.GetParticleCount();
                 
                 this.debug.innerHTML = `
                     Accelerometer: ${accelerometerText}<br>
@@ -826,54 +889,7 @@
                 `;
             }
 
-            applyBuoyancyForces() {
-                // Apply upward buoyancy force to foam particles to make them float
-                const foamCount = this.foamParticleSystem.GetParticleCount();
-                if (foamCount === 0) return;
-
-                try {
-                    // Get foam particle positions and velocities
-                    const posOffset = this.foamParticleSystem.GetPositionBuffer();
-                    const velOffset = this.foamParticleSystem.GetVelocityBuffer();
-                    
-                    if (posOffset && posOffset.e !== undefined && velOffset && velOffset.e !== undefined) {
-                        const positions = new Float32Array(Module.HEAPU8.buffer, posOffset.e, foamCount * 2);
-                        const velocities = new Float32Array(Module.HEAPU8.buffer, velOffset.e, foamCount * 2);
-                        
-                        // Apply buoyancy force to each foam particle
-                        for (let i = 0; i < foamCount; i++) {
-                            const posX = positions[i * 2];
-                            const posY = positions[i * 2 + 1];
-                            const velY = velocities[i * 2 + 1];
-                            
-                            // Check if foam particle is below a certain height (in liquid)
-                            // Apply stronger upward force if the particle is deeper in the liquid
-                            if (posY < 15) { // Below the expected foam line
-                                const buoyancyStrength = Math.max(0, (15 - posY) * 0.5); // Stronger force when deeper
-                                const dampening = Math.max(0, 1 - Math.abs(velY) * 0.1); // Reduce force if already moving fast upward
-                                
-                                // Apply upward force (positive Y direction in Box2D)
-                                const forceY = buoyancyStrength * dampening * 3;
-                                
-                                // Modify velocity directly (simpler approach)
-                                velocities[i * 2 + 1] += forceY * (1/60); // Add upward velocity
-                                
-                                // Limit maximum upward velocity to prevent particles shooting up
-                                if (velocities[i * 2 + 1] > 5) {
-                                    velocities[i * 2 + 1] = 5;
-                                }
-                            }
-                        }
-                    }
-                } catch (e) {
-                    // Silently handle errors to avoid spam
-                }
-            }
-
             animate() {
-                // Apply buoyancy forces to foam particles
-                this.applyBuoyancyForces();
-                
                 // Step physics simulation
                 try {
                     this.world.Step(1/60, 8, 3);
@@ -881,9 +897,8 @@
                     // Debug: Log particle count every few frames
                     this.frameCount = (this.frameCount || 0) + 1;
                     if (this.frameCount % 60 === 0) { // Every second
-                        const beerCount = this.beerParticleSystem.GetParticleCount();
-                        const foamCount = this.foamParticleSystem.GetParticleCount();
-                        console.log(`Frame ${this.frameCount}: Beer particles: ${beerCount}, Foam particles: ${foamCount}`);
+                        const totalCount = this.particleSystem.GetParticleCount();
+                        console.log(`Frame ${this.frameCount}: Total particles: ${totalCount}`);
                     }
                     
                 } catch (e) {
