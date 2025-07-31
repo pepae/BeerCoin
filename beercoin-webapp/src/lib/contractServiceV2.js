@@ -309,6 +309,42 @@ class ContractServiceV2 {
       return false;
     }
   }
+
+  // Get base reward rate
+  async getBaseRewardRate() {
+    try {
+      if (!this.distributorContract) return '0';
+      const rate = await this.distributorContract.baseRewardRate();
+      return ethers.formatEther(rate);
+    } catch (error) {
+      console.error('Error getting base reward rate:', error);
+      return '0';
+    }
+  }
+
+  // Get referrer multiplier
+  async getReferrerMultiplier() {
+    try {
+      if (!this.distributorContract) return '0';
+      const multiplier = await this.distributorContract.referrerMultiplier();
+      return Number(multiplier);
+    } catch (error) {
+      console.error('Error getting referrer multiplier:', error);
+      return 0;
+    }
+  }
+
+  // Get multiplier base
+  async getMultiplierBase() {
+    try {
+      if (!this.distributorContract) return '100';
+      const base = await this.distributorContract.MULTIPLIER_BASE();
+      return Number(base);
+    } catch (error) {
+      console.error('Error getting multiplier base:', error);
+      return 100;
+    }
+  }
 }
 
 // Create and export singleton instance

@@ -16,6 +16,8 @@ const Dashboard = () => {
     beerBalance,
     pendingRewards,
     userInfo,
+    baseRewardRate,
+    referrerMultiplier,
     claimRewards,
     refreshBalances
   } = useContractData();
@@ -99,20 +101,28 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">Claimable now</p>
             
             {/* Referral Information for Trusted Users */}
-            {isTrusted && userInfo && (
+            {isTrusted && (
               <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-muted-foreground">Referrals:</span>
-                  <span className="text-sm font-medium">{userInfo.referralCount || 0} users</span>
+                  <span className="text-sm font-medium">
+                    {userInfo ? userInfo.referralCount || 0 : 'Loading...'} users
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Issuance Multiplier:</span>
                   <span className="text-sm font-medium text-primary">
-                    {((userInfo.referralCount || 0) * 0.1 + 1).toFixed(1)}x
+                    {userInfo 
+                      ? `${((userInfo.referralCount || 0) * 0.1 + 1).toFixed(1)}x`
+                      : 'Loading...'
+                    }
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Base rate + {((userInfo.referralCount || 0) * 0.1).toFixed(1)}x bonus from referrals
+                  {userInfo 
+                    ? `Base rate + ${((userInfo.referralCount || 0) * 0.1).toFixed(1)}x bonus from referrals`
+                    : 'Loading multiplier information...'
+                  }
                 </p>
               </div>
             )}
