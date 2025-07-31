@@ -266,6 +266,24 @@ const AdminPanel = () => {
     }
   };
 
+  const handleSendXDaiToUser = async (userAddress, username) => {
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.sendXDai(userAddress, '0.01');
+      
+      if (result.success) {
+        showMessage(`Successfully sent 0.01 xDAI to ${username}`);
+      } else {
+        showMessage(result.error || 'Failed to send xDAI', true);
+      }
+    } catch (err) {
+      console.error('Error sending xDAI to user:', err);
+      showMessage(`Failed to send xDAI to ${username}: ${err.message}`, true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!wallet) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -301,11 +319,11 @@ const AdminPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🍺 BeerCoin Admin Panel</h1>
-          <p className="text-gray-600">Contract administration and management</p>
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">🍺 BeerCoin Admin Panel</h1>
+          <p className="text-sm sm:text-base text-gray-600">Contract administration and management</p>
           
           {error && (
             <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -350,8 +368,8 @@ const AdminPanel = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* User Management */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">👥 User Management</h2>
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">👥 User Management</h2>
             
             {/* Search User */}
             <form onSubmit={handleSearchUser} className="mb-6">
@@ -362,13 +380,13 @@ const AdminPanel = () => {
                   placeholder="Username"
                   value={searchUsername}
                   onChange={(e) => setSearchUsername(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Searching...' : 'Search User'}
                 </button>
@@ -405,7 +423,7 @@ const AdminPanel = () => {
                   placeholder="User Address (0x...)"
                   value={trustUserAddress}
                   onChange={(e) => setTrustUserAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <input
@@ -413,13 +431,13 @@ const AdminPanel = () => {
                   placeholder="Username"
                   value={trustUserUsername}
                   onChange={(e) => setTrustUserUsername(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Adding...' : 'Add Trusted User'}
                 </button>
@@ -435,13 +453,13 @@ const AdminPanel = () => {
                   placeholder="User Address (0x...)"
                   value={removeTrustAddress}
                   onChange={(e) => setRemoveTrustAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Removing...' : 'Remove Trusted User'}
                 </button>
@@ -457,7 +475,7 @@ const AdminPanel = () => {
                   placeholder="Recipient Address (0x...)"
                   value={sendXdaiAddress}
                   onChange={(e) => setSendXdaiAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <input
@@ -466,13 +484,13 @@ const AdminPanel = () => {
                   placeholder="Amount (xDAI)"
                   value={sendXdaiAmount}
                   onChange={(e) => setSendXdaiAmount(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Sending...' : 'Send xDAI'}
                 </button>
@@ -481,8 +499,8 @@ const AdminPanel = () => {
           </div>
 
           {/* Contract Configuration */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">⚙️ Contract Configuration</h2>
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">⚙️ Contract Configuration</h2>
             
             {/* Toggle Distribution */}
             <div className="mb-6">
@@ -490,7 +508,7 @@ const AdminPanel = () => {
               <button
                 onClick={handleToggleDistribution}
                 disabled={loading}
-                className={`w-full py-3 px-4 rounded-lg transition-colors disabled:opacity-50 ${
+                className={`w-full py-3 px-4 rounded-lg transition-colors disabled:opacity-50 text-sm sm:text-base ${
                   distributionActive 
                     ? 'bg-red-600 text-white hover:bg-red-700' 
                     : 'bg-green-600 text-white hover:bg-green-700'
@@ -510,13 +528,13 @@ const AdminPanel = () => {
                   placeholder="New Rate (BEER per day)"
                   value={newRewardRate}
                   onChange={(e) => setNewRewardRate(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                  className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Updating...' : 'Update Reward Rate'}
                 </button>
@@ -532,16 +550,16 @@ const AdminPanel = () => {
                   placeholder="New Multiplier (e.g., 10 for 10/100)"
                   value={newReferrerMultiplier}
                   onChange={(e) => setNewReferrerMultiplier(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                   required
                 />
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Current: {referrerMultiplier}/{multiplierBase} = {((referrerMultiplier / multiplierBase) * 100).toFixed(1)}% per referral
                 </p>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Updating...' : 'Update Multiplier'}
                 </button>
@@ -552,11 +570,114 @@ const AdminPanel = () => {
 
         {/* All Users List */}
         {allUsersWithDetails.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
               👥 All Users ({allUsersWithDetails.length})
             </h2>
-            <div className="overflow-x-auto">
+            
+            {/* Mobile-friendly user cards for small screens */}
+            <div className="block md:hidden space-y-4">
+              {allUsersWithDetails
+                .sort((a, b) => {
+                  // Sort by trusted status first, then by username
+                  if (a.isTrusted !== b.isTrusted) return b.isTrusted - a.isTrusted;
+                  return a.username.localeCompare(b.username);
+                })
+                .map((user, index) => (
+                  <div key={user.address} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    {/* User Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center flex-wrap gap-2 mb-2">
+                          <span className="font-medium text-lg">{user.username}</span>
+                          {user.isTrusted && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                              ⭐ Trusted
+                            </span>
+                          )}
+                          {!user.isActive && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs font-mono text-gray-600 break-all mb-2">
+                          {user.address}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* User Stats */}
+                    <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">Status:</span>
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                            user.isTrusted 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {user.isTrusted ? 'Trusted' : 'Regular'}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Referrals:</span>
+                        <div className="mt-1 font-semibold text-purple-600">
+                          {user.referralCount}
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Total Earned:</span>
+                        <div className="mt-1 font-medium text-orange-600">
+                          {parseFloat(user.totalEarned).toFixed(4)} BEER
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {!user.isTrusted && user.isActive && (
+                        <button
+                          onClick={() => handlePromoteToTrusted(user.address, user.username)}
+                          disabled={loading}
+                          className="flex-1 min-w-0 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                          {loading ? 'Processing...' : 'Make Trusted'}
+                        </button>
+                      )}
+                      {user.isTrusted && (
+                        <button
+                          onClick={() => handleRemoveTrustedUser({ preventDefault: () => {}, target: { removeUserAddress: { value: user.address } } })}
+                          disabled={loading}
+                          className="flex-1 min-w-0 px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                        >
+                          {loading ? 'Processing...' : 'Remove Trust'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleSendXDaiToUser(user.address, user.username)}
+                        disabled={loading}
+                        className="flex-1 min-w-0 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      >
+                        {loading ? 'Sending...' : 'Send 0.01 xDAI'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(user.address);
+                          showMessage('Address copied to clipboard');
+                        }}
+                        className="px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            
+            {/* Desktop table view */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
@@ -631,7 +752,7 @@ const AdminPanel = () => {
                             <button
                               onClick={() => handlePromoteToTrusted(user.address, user.username)}
                               disabled={loading}
-                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                             >
                               {loading ? '...' : 'Make Trusted'}
                             </button>
@@ -640,17 +761,24 @@ const AdminPanel = () => {
                             <button
                               onClick={() => handleRemoveTrustedUser({ preventDefault: () => {}, target: { removeUserAddress: { value: user.address } } })}
                               disabled={loading}
-                              className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                              className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                             >
                               {loading ? '...' : 'Remove Trust'}
                             </button>
                           )}
                           <button
+                            onClick={() => handleSendXDaiToUser(user.address, user.username)}
+                            disabled={loading}
+                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {loading ? '...' : 'Send 0.01 xDAI'}
+                          </button>
+                          <button
                             onClick={() => {
                               navigator.clipboard.writeText(user.address);
                               showMessage('Address copied to clipboard');
                             }}
-                            className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                            className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors whitespace-nowrap"
                           >
                             Copy Address
                           </button>
@@ -663,30 +791,30 @@ const AdminPanel = () => {
             </div>
             
             {/* Summary Stats */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
+            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">
                   {allUsersWithDetails.length}
                 </div>
-                <div className="text-sm text-blue-600">Total Users</div>
+                <div className="text-xs sm:text-sm text-blue-600">Total Users</div>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
+                <div className="text-xl sm:text-2xl font-bold text-green-600">
                   {allUsersWithDetails.filter(u => u.isTrusted).length}
                 </div>
-                <div className="text-sm text-green-600">Trusted Users</div>
+                <div className="text-xs sm:text-sm text-green-600">Trusted Users</div>
               </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
+              <div className="bg-purple-50 p-3 sm:p-4 rounded-lg">
+                <div className="text-xl sm:text-2xl font-bold text-purple-600">
                   {allUsersWithDetails.reduce((sum, u) => sum + u.referralCount, 0)}
                 </div>
-                <div className="text-sm text-purple-600">Total Referrals</div>
+                <div className="text-xs sm:text-sm text-purple-600">Total Referrals</div>
               </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">
+              <div className="bg-orange-50 p-3 sm:p-4 rounded-lg">
+                <div className="text-xl sm:text-2xl font-bold text-orange-600">
                   {allUsersWithDetails.reduce((sum, u) => sum + parseFloat(u.totalEarned), 0).toFixed(2)}
                 </div>
-                <div className="text-sm text-orange-600">Total BEER Earned</div>
+                <div className="text-xs sm:text-sm text-orange-600">Total BEER Earned</div>
               </div>
             </div>
           </div>
@@ -694,9 +822,9 @@ const AdminPanel = () => {
         
         {/* Loading state for users */}
         {allUsersWithDetails.length === 0 && !loading && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">👥 All Users</h2>
-            <p className="text-gray-600 text-center py-8">No users found or still loading user data...</p>
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">👥 All Users</h2>
+            <p className="text-sm sm:text-base text-gray-600 text-center py-8">No users found or still loading user data...</p>
           </div>
         )}
       </div>
