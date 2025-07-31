@@ -286,9 +286,12 @@ const AdminPanel = () => {
 
   if (!wallet) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Panel</h1>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🔐</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Panel</h1>
           <p className="text-gray-600">Please connect your wallet to access the admin panel.</p>
         </div>
       </div>
@@ -297,9 +300,9 @@ const AdminPanel = () => {
 
   if (loading && !isOwner) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Verifying admin access...</p>
         </div>
       </div>
@@ -308,9 +311,12 @@ const AdminPanel = () => {
 
   if (!isOwner) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">❌</span>
+          </div>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
           <p className="text-gray-600 mb-4">You are not authorized to access this admin panel.</p>
           <p className="text-sm text-gray-500">Only the contract owner can access this page.</p>
         </div>
@@ -319,506 +325,493 @@ const AdminPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">🍺 BeerCoin Admin Panel</h1>
-          <p className="text-sm sm:text-base text-gray-600">Contract administration and management</p>
-          
-          {error && (
-            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-          
-          {success && (
-            <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-              {success}
-            </div>
-          )}
-        </div>
-
-        {/* Contract Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-gray-700 mb-2">Distribution Status</h3>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Mobile-optimized header */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${distributionActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className={distributionActive ? 'text-green-600' : 'text-red-600'}>
-                {distributionActive ? 'Active' : 'Inactive'}
-              </span>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+                🍺 <span className="ml-2">Admin Panel</span>
+              </h1>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-gray-700 mb-2">Base Reward Rate</h3>
-            <p className="text-xl font-bold text-orange-600">{parseFloat(baseRewardRate).toFixed(4)} BEER/day</p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-gray-700 mb-2">Referrer Multiplier</h3>
-            <p className="text-xl font-bold text-blue-600">{referrerMultiplier}/100</p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-gray-700 mb-2">Total Users</h3>
-            <p className="text-xl font-bold text-purple-600">{totalUsers} ({totalTrustedUsers} trusted)</p>
+            <div className="flex items-center space-x-2">
+              <div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                distributionActive 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  distributionActive ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                <span className="hidden sm:inline">{distributionActive ? 'Active' : 'Inactive'}</span>
+                <span className="sm:hidden">{distributionActive ? '✓' : '✗'}</span>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Management */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">👥 User Management</h2>
-            
-            {/* Search User */}
-            <form onSubmit={handleSearchUser} className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Search User</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={searchUsername}
-                  onChange={(e) => setSearchUsername(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {loading ? 'Searching...' : 'Search User'}
-                </button>
-              </div>
-              
-              {searchResult && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <p className="font-semibold text-gray-900">User: {searchResult.username}</p>
-                  <p className="text-sm text-gray-600 font-mono break-all">Address: {searchResult.address}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className={`px-2 py-1 text-xs rounded ${searchResult.isTrusted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {searchResult.isTrusted ? 'Trusted' : 'Regular'}
-                    </span>
-                    <span className={`px-2 py-1 text-xs rounded ${searchResult.isActive ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>
-                      {searchResult.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">
-                      {searchResult.referralCount} referrals
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Total Earned: {parseFloat(searchResult.totalEarned).toFixed(4)} BEER
-                  </p>
-                </div>
-              )}
-            </form>
-            
-            {/* Add Trusted User */}
-            <form onSubmit={handleAddTrustedUser} className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Add Trusted User</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="User Address (0x...)"
-                  value={trustUserAddress}
-                  onChange={(e) => setTrustUserAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={trustUserUsername}
-                  onChange={(e) => setTrustUserUsername(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {loading ? 'Adding...' : 'Add Trusted User'}
-                </button>
-              </div>
-            </form>
-
-            {/* Remove Trusted User */}
-            <form onSubmit={handleRemoveTrustedUser} className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Remove Trusted User</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="User Address (0x...)"
-                  value={removeTrustAddress}
-                  onChange={(e) => setRemoveTrustAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {loading ? 'Removing...' : 'Remove Trusted User'}
-                </button>
-              </div>
-            </form>
-
-            {/* Send xDAI */}
-            <form onSubmit={handleSendXdai}>
-              <h3 className="font-semibold text-gray-700 mb-3">Send xDAI</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Recipient Address (0x...)"
-                  value={sendXdaiAddress}
-                  onChange={(e) => setSendXdaiAddress(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <input
-                  type="number"
-                  step="0.0001"
-                  placeholder="Amount (xDAI)"
-                  value={sendXdaiAmount}
-                  onChange={(e) => setSendXdaiAmount(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {loading ? 'Sending...' : 'Send xDAI'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Contract Configuration */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">⚙️ Contract Configuration</h2>
-            
-            {/* Toggle Distribution */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Distribution Control</h3>
-              <button
-                onClick={handleToggleDistribution}
-                disabled={loading}
-                className={`w-full py-3 px-4 rounded-lg transition-colors disabled:opacity-50 text-sm sm:text-base ${
-                  distributionActive 
-                    ? 'bg-red-600 text-white hover:bg-red-700' 
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {loading ? 'Updating...' : distributionActive ? 'Disable Distribution' : 'Enable Distribution'}
-              </button>
-            </div>
-
-            {/* Update Reward Rate */}
-            <form onSubmit={handleUpdateRewardRate} className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Update Reward Rate</h3>
-              <div className="space-y-3">
-                <input
-                  type="number"
-                  step="0.0001"
-                  placeholder="New Rate (BEER per day)"
-                  value={newRewardRate}
-                  onChange={(e) => setNewRewardRate(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {loading ? 'Updating...' : 'Update Reward Rate'}
-                </button>
-              </div>
-            </form>
-
-            {/* Update Referrer Multiplier */}
-            <form onSubmit={handleUpdateReferrerMultiplier}>
-              <h3 className="font-semibold text-gray-700 mb-3">Update Referrer Multiplier</h3>
-              <div className="space-y-3">
-                <input
-                  type="number"
-                  placeholder="New Multiplier (e.g., 10 for 10/100)"
-                  value={newReferrerMultiplier}
-                  onChange={(e) => setNewReferrerMultiplier(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
-                  required
-                />
-                <p className="text-xs sm:text-sm text-gray-600">
-                  Current: {referrerMultiplier}/{multiplierBase} = {((referrerMultiplier / multiplierBase) * 100).toFixed(1)}% per referral
-                </p>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {loading ? 'Updating...' : 'Update Multiplier'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        {/* All Users List */}
-        {allUsersWithDetails.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-              👥 All Users ({allUsersWithDetails.length})
-            </h2>
-            
-            {/* Mobile-friendly user cards for small screens */}
-            <div className="block md:hidden space-y-3">
-              {allUsersWithDetails
-                .sort((a, b) => {
-                  // Sort by trusted status first, then by username
-                  if (a.isTrusted !== b.isTrusted) return b.isTrusted - a.isTrusted;
-                  return a.username.localeCompare(b.username);
-                })
-                .map((user, index) => (
-                  <div key={user.address} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                    {/* User Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center flex-wrap gap-1 mb-2">
-                          <span className="font-medium text-base truncate">{user.username}</span>
-                          {user.isTrusted && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800 flex-shrink-0">
-                              ⭐ Trusted
-                            </span>
-                          )}
-                          {!user.isActive && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-red-100 text-red-800 flex-shrink-0">
-                              Inactive
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs font-mono text-gray-600 break-all">
-                          {user.address}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* User Stats - Compact */}
-                    <div className="flex justify-between items-center mb-3 text-xs">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <span className="text-gray-500">Status:</span>
-                          <span className={`ml-1 font-medium ${user.isTrusted ? 'text-green-600' : 'text-blue-600'}`}>
-                            {user.isTrusted ? 'Trusted' : 'Regular'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Referrals:</span>
-                          <span className="ml-1 font-semibold text-purple-600">{user.referralCount}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-gray-500">Earned:</div>
-                        <div className="font-medium text-orange-600">{parseFloat(user.totalEarned).toFixed(2)} BEER</div>
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons - Mobile optimized */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {!user.isTrusted && user.isActive && (
-                        <button
-                          onClick={() => handlePromoteToTrusted(user.address, user.username)}
-                          disabled={loading}
-                          className="px-2 py-2 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50 font-medium"
-                        >
-                          {loading ? '...' : 'Make Trusted'}
-                        </button>
-                      )}
-                      {user.isTrusted && (
-                        <button
-                          onClick={() => handleRemoveTrustedUser({ preventDefault: () => {}, target: { removeUserAddress: { value: user.address } } })}
-                          disabled={loading}
-                          className="px-2 py-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
-                        >
-                          {loading ? '...' : 'Remove Trust'}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleSendXDaiToUser(user.address, user.username)}
-                        disabled={loading}
-                        className="px-2 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
-                      >
-                        {loading ? '...' : '💰 0.01 xDAI'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(user.address);
-                          showMessage('Address copied to clipboard');
-                        }}
-                        className="px-2 py-2 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors font-medium"
-                      >
-                        📋 Copy
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-            
-            {/* Desktop table view */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold">Username</th>
-                    <th className="text-left py-3 px-4 font-semibold">Address</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold">Referrals</th>
-                    <th className="text-left py-3 px-4 font-semibold">Total Earned</th>
-                    <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allUsersWithDetails
-                    .sort((a, b) => {
-                      // Sort by trusted status first, then by username
-                      if (a.isTrusted !== b.isTrusted) return b.isTrusted - a.isTrusted;
-                      return a.username.localeCompare(b.username);
-                    })
-                    .map((user, index) => (
-                    <tr key={user.address} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center">
-                          <span className="font-medium">{user.username}</span>
-                          {user.isTrusted && (
-                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                              ⭐ Trusted
-                            </span>
-                          )}
-                          {!user.isActive && (
-                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                              Inactive
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-sm text-gray-600 break-all">
-                          {user.address.substring(0, 6)}...{user.address.substring(user.address.length - 4)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col space-y-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                            user.isTrusted 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {user.isTrusted ? 'Trusted User' : 'Regular User'}
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                            user.isActive 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="font-semibold text-purple-600">
-                          {user.referralCount}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-medium text-orange-600">
-                          {parseFloat(user.totalEarned).toFixed(4)} BEER
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col space-y-2">
-                          {!user.isTrusted && user.isActive && (
-                            <button
-                              onClick={() => handlePromoteToTrusted(user.address, user.username)}
-                              disabled={loading}
-                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50 whitespace-nowrap"
-                            >
-                              {loading ? '...' : 'Make Trusted'}
-                            </button>
-                          )}
-                          {user.isTrusted && (
-                            <button
-                              onClick={() => handleRemoveTrustedUser({ preventDefault: () => {}, target: { removeUserAddress: { value: user.address } } })}
-                              disabled={loading}
-                              className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50 whitespace-nowrap"
-                            >
-                              {loading ? '...' : 'Remove Trust'}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleSendXDaiToUser(user.address, user.username)}
-                            disabled={loading}
-                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:opacity-50 whitespace-nowrap"
-                          >
-                            {loading ? '...' : 'Send 0.01 xDAI'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(user.address);
-                              showMessage('Address copied to clipboard');
-                            }}
-                            className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors whitespace-nowrap"
-                          >
-                            Copy Address
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Summary Stats */}
-            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                  {allUsersWithDetails.length}
-                </div>
-                <div className="text-xs sm:text-sm text-blue-600">Total Users</div>
-              </div>
-              <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-green-600">
-                  {allUsersWithDetails.filter(u => u.isTrusted).length}
-                </div>
-                <div className="text-xs sm:text-sm text-green-600">Trusted Users</div>
-              </div>
-              <div className="bg-purple-50 p-3 sm:p-4 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                  {allUsersWithDetails.reduce((sum, u) => sum + u.referralCount, 0)}
-                </div>
-                <div className="text-xs sm:text-sm text-purple-600">Total Referrals</div>
-              </div>
-              <div className="bg-orange-50 p-3 sm:p-4 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-orange-600">
-                  {allUsersWithDetails.reduce((sum, u) => sum + parseFloat(u.totalEarned), 0).toFixed(2)}
-                </div>
-                <div className="text-xs sm:text-sm text-orange-600">Total BEER Earned</div>
-              </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Status Messages */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg shadow-sm">
+            <div className="flex">
+              <span className="text-red-500 mr-3">❌</span>
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           </div>
         )}
         
-        {/* Loading state for users */}
-        {allUsersWithDetails.length === 0 && !loading && (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">👥 All Users</h2>
-            <p className="text-sm sm:text-base text-gray-600 text-center py-8">No users found or still loading user data...</p>
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg shadow-sm">
+            <div className="flex">
+              <span className="text-green-500 mr-3">✅</span>
+              <p className="text-sm text-green-700">{success}</p>
+            </div>
           </div>
         )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-blue-600 text-lg">👥</span>
+              </div>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Total Users</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{totalUsers}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-green-600 text-lg">⭐</span>
+              </div>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Trusted</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{totalTrustedUsers}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <span className="text-orange-600 text-lg">🍺</span>
+              </div>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Rate/Day</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{parseFloat(baseRewardRate).toFixed(1)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <span className="text-purple-600 text-lg">🔥</span>
+              </div>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Multiplier</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{referrerMultiplier}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                ⚡ Quick Actions
+              </h2>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={handleToggleDistribution}
+                  disabled={loading}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                    distributionActive 
+                      ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  <span className="mr-2">{distributionActive ? '🛑' : '▶️'}</span>
+                  {loading ? 'Processing...' : distributionActive ? 'Stop Distribution' : 'Start Distribution'}
+                </button>
+                
+                <button
+                  onClick={() => loadContractData()}
+                  disabled={loading}
+                  className="flex items-center justify-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  <span className="mr-2">🔄</span>
+                  {loading ? 'Refreshing...' : 'Refresh Data'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Search User */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                🔍 Find User
+              </h2>
+            </div>
+            <div className="p-4">
+              <form onSubmit={handleSearchUser} className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter username to search..."
+                    value={searchUsername}
+                    onChange={(e) => setSearchUsername(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+                    required
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400">🔍</span>
+                  </div>
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Searching...' : 'Search User'}
+                </button>
+              </form>
+              
+              {searchResult && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{searchResult.username}</h3>
+                      <p className="text-xs font-mono text-gray-500 mt-1 break-all">{searchResult.address}</p>
+                    </div>
+                    <div className="flex flex-col gap-1 ml-3">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium whitespace-nowrap ${
+                        searchResult.isTrusted 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {searchResult.isTrusted ? '⭐ Trusted' : 'Regular'}
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium whitespace-nowrap ${
+                        searchResult.isActive 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {searchResult.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                      <span className="text-gray-500">Referrals:</span>
+                      <span className="ml-1 font-semibold text-purple-600">{searchResult.referralCount}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Earned:</span>
+                      <span className="ml-1 font-semibold text-orange-600">{parseFloat(searchResult.totalEarned).toFixed(2)} BEER</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {!searchResult.isTrusted && searchResult.isActive && (
+                      <button
+                        onClick={() => handlePromoteToTrusted(searchResult.address, searchResult.username)}
+                        disabled={loading}
+                        className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
+                      >
+                        Make Trusted
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleSendXDaiToUser(searchResult.address, searchResult.username)}
+                      disabled={loading}
+                      className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
+                    >
+                      💰 Send 0.01 xDAI
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(searchResult.address);
+                        showMessage('Address copied!');
+                      }}
+                      className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md font-medium transition-colors"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Admin Tools */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                ⚙️ Admin Tools
+              </h2>
+            </div>
+            
+            <div className="p-4 space-y-6">
+              {/* Add Trusted User */}
+              <div className="border border-gray-200 rounded-lg">
+                <div className="p-4 bg-gray-50 border-b border-gray-200">
+                  <h3 className="font-medium text-gray-900">Add Trusted User</h3>
+                </div>
+                <div className="p-4">
+                  <form onSubmit={handleAddTrustedUser} className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="User Address (0x...)"
+                      value={trustUserAddress}
+                      onChange={(e) => setTrustUserAddress(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Username"
+                      value={trustUserUsername}
+                      onChange={(e) => setTrustUserUsername(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading ? 'Adding...' : 'Add Trusted User'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Send xDAI */}
+              <div className="border border-gray-200 rounded-lg">
+                <div className="p-4 bg-gray-50 border-b border-gray-200">
+                  <h3 className="font-medium text-gray-900">Send xDAI</h3>
+                </div>
+                <div className="p-4">
+                  <form onSubmit={handleSendXdai} className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Recipient Address (0x...)"
+                      value={sendXdaiAddress}
+                      onChange={(e) => setSendXdaiAddress(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      required
+                    />
+                    <input
+                      type="number"
+                      step="0.0001"
+                      placeholder="Amount (xDAI)"
+                      value={sendXdaiAmount}
+                      onChange={(e) => setSendXdaiAmount(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading ? 'Sending...' : 'Send xDAI'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Config Updates */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="p-3 bg-gray-50 border-b border-gray-200">
+                    <h3 className="font-medium text-gray-900 text-sm">Update Reward Rate</h3>
+                  </div>
+                  <div className="p-3">
+                    <form onSubmit={handleUpdateRewardRate} className="space-y-3">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        placeholder="New Rate (BEER/day)"
+                        value={newRewardRate}
+                        onChange={(e) => setNewRewardRate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {loading ? 'Updating...' : 'Update Rate'}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="p-3 bg-gray-50 border-b border-gray-200">
+                    <h3 className="font-medium text-gray-900 text-sm">Update Multiplier</h3>
+                  </div>
+                  <div className="p-3">
+                    <form onSubmit={handleUpdateReferrerMultiplier} className="space-y-3">
+                      <input
+                        type="number"
+                        placeholder="New Multiplier (1-100)"
+                        value={newReferrerMultiplier}
+                        onChange={(e) => setNewReferrerMultiplier(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {loading ? 'Updating...' : 'Update'}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* All Users List - Mobile Optimized */}
+          {allUsersWithDetails.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  👥 All Users ({allUsersWithDetails.length})
+                </h2>
+              </div>
+              
+              {/* Mobile-first user list */}
+              <div className="divide-y divide-gray-100">
+                {allUsersWithDetails
+                  .sort((a, b) => {
+                    if (a.isTrusted !== b.isTrusted) return b.isTrusted - a.isTrusted;
+                    return a.username.localeCompare(b.username);
+                  })
+                  .map((user, index) => (
+                    <div key={user.address} className="p-4">
+                      {/* User Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-gray-900 truncate">{user.username}</h3>
+                            {user.isTrusted && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 font-medium flex-shrink-0">
+                                ⭐ Trusted
+                              </span>
+                            )}
+                            {!user.isActive && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800 font-medium flex-shrink-0">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-mono text-gray-500 break-all">{user.address}</p>
+                        </div>
+                      </div>
+                      
+                      {/* User Stats */}
+                      <div className="flex justify-between items-center mb-3 text-sm">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <span className="text-gray-500">Referrals:</span>
+                            <span className="ml-1 font-semibold text-purple-600">{user.referralCount}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Earned:</span>
+                            <span className="ml-1 font-semibold text-orange-600">{parseFloat(user.totalEarned).toFixed(2)} BEER</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        {!user.isTrusted && user.isActive && (
+                          <button
+                            onClick={() => handlePromoteToTrusted(user.address, user.username)}
+                            disabled={loading}
+                            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
+                          >
+                            {loading ? '...' : 'Make Trusted'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleSendXDaiToUser(user.address, user.username)}
+                          disabled={loading}
+                          className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md font-medium transition-colors disabled:opacity-50"
+                        >
+                          {loading ? '...' : '💰 0.01 xDAI'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(user.address);
+                            showMessage('Address copied!');
+                          }}
+                          className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md font-medium transition-colors"
+                        >
+                          📋 Copy
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+              
+              {/* Summary Stats */}
+              <div className="p-4 border-t border-gray-100 bg-gray-50">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{allUsersWithDetails.length}</div>
+                    <div className="text-xs text-gray-600">Total Users</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{allUsersWithDetails.filter(u => u.isTrusted).length}</div>
+                    <div className="text-xs text-gray-600">Trusted</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-purple-600">{allUsersWithDetails.reduce((sum, u) => sum + u.referralCount, 0)}</div>
+                    <div className="text-xs text-gray-600">Referrals</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-orange-600">{allUsersWithDetails.reduce((sum, u) => sum + parseFloat(u.totalEarned), 0).toFixed(0)}</div>
+                    <div className="text-xs text-gray-600">BEER Earned</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Loading state for users */}
+          {allUsersWithDetails.length === 0 && !loading && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">👥</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Users Found</h3>
+              <p className="text-gray-600">Still loading user data or no users are registered yet.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
