@@ -375,6 +375,38 @@ class ContractServiceV2 {
     }
   }
 
+  // Promote existing user to trusted (admin only)
+  async promoteToTrusted(userAddress) {
+    try {
+      if (!this.distributorContract) throw new Error('Contract not initialized');
+      
+      const checksummedAddress = ethers.getAddress(userAddress.toLowerCase());
+      
+      // Check if user is already registered
+      const isUserRegistered = await this.distributorContract.isRegistered(checksummedAddress);
+      if (!isUserRegistered) {
+        throw new Error('User is not registered');
+      }
+      
+      // Get user info to check if already trusted
+      const userInfo = await this.distributorContract.users(checksummedAddress);
+      if (userInfo.isTrusted) {
+        throw new Error('User is already trusted');
+      }
+      
+      // The contract has a bug - it checks username availability before checking if user exists
+      // We need to use a different approach: generate a temporary unique username
+      const tempUsername = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const tx = await this.distributorContract.addTrustedUser(checksummedAddress, tempUsername);
+      await tx.wait();
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Error promoting user to trusted:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Remove trusted user (admin only)
   async removeTrustedUser(userAddress) {
     try {

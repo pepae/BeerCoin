@@ -158,9 +158,11 @@ contract BeerCoinDistributorV2 is Ownable, ReentrancyGuard {
     function addTrustedUser(address user, string memory username) external onlyOwner {
         require(user != address(0), "User address cannot be zero");
         require(bytes(username).length > 0, "Username cannot be empty");
-        require(usernameToAddress[username] == address(0), "Username already taken");
         
         if (!isRegistered[user]) {
+            // For new users, check if username is available
+            require(usernameToAddress[username] == address(0), "Username already taken");
+            
             // Register new trusted user
             users[user] = User({
                 username: username,
@@ -178,7 +180,7 @@ contract BeerCoinDistributorV2 is Ownable, ReentrancyGuard {
             allUsers.push(user);
             trustedUsers.push(user);
         } else {
-            // Elevate existing user to trusted
+            // Elevate existing user to trusted (username parameter is ignored for existing users)
             require(!users[user].isTrusted, "User is already trusted");
             users[user].isTrusted = true;
             trustedUsers.push(user);
