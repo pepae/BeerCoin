@@ -31,12 +31,8 @@ const QRCodeDisplay = ({ setActivePage }) => {
     return null;
   }
 
-  // Generate QR code data
-  const qrData = JSON.stringify({
-    address: wallet.address,
-    isTrusted: isTrusted || false,
-    timestamp: Date.now(),
-  });
+  // Generate QR code data with deeplink that works both as URL and app data
+  const qrData = `https://pepae.github.io/BeerCoin/?ref=${wallet.address}&trusted=${isTrusted ? 'true' : 'false'}&t=${Date.now()}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(wallet.address);
@@ -96,9 +92,10 @@ const QRCodeDisplay = ({ setActivePage }) => {
       <div className="bg-muted p-4 rounded-lg">
         <h3 className="font-medium mb-2">How to use:</h3>
         <ul className="text-sm text-muted-foreground space-y-2">
-          <li>• If you're a trusted user, others can scan this QR code to register with your referral</li>
-          <li>• Anyone can scan this QR code to send you BEER tokens</li>
-          <li>• Share your QR code to grow your referral network</li>
+          <li>• <strong>New users:</strong> Scanning this QR code will open BeerCoin app and pre-fill your referral info</li>
+          <li>• <strong>Existing users:</strong> Can scan from within the app to send you BEER tokens or use your referral</li>
+          <li>• <strong>Trusted users only:</strong> Others can register through your referral link</li>
+          <li>• Share this QR code to grow your referral network and earn more BEER!</li>
         </ul>
       </div>
     </div>
