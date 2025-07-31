@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Beer Glass - BeerCoin</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #2c1810, #4a2c1a);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #canvas {
+            border: 2px solid #8b4513;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #f2a900;
+            font-size: 14px;
+            z-index: 100;
+        }
+
+        .info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #f2a900;
+            font-size: 12px;
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        .debug {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #f2a900;
+            font-size: 12px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #f2a900;
+            color: #2c1810;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #ffb700;
+        }
+
+        label {
+            color: #f2a900;
+            font-size: 12px;
+            display: block;
+            margin: 5px 0;
+        }
+
+        input[type="range"] {
+            width: 100px;
+            margin: 0 5px;
+        }
+
+        .title {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: #f2a900;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">🍺 Interactive Beer Glass</div>
+    
+    <div class="controls">
+        <button onclick="fillGlassWithBeer()">Fill Glass</button>
+        <button onclick="addFoamLayer()">Add Foam Layer</button>
+        <button onclick="pourBeer()">Pour Beer</button>
+        <button onclick="addFoam()">Add Foam</button>
+        <button onclick="resetGlass()">Reset</button>
+        <button onclick="toggleGravity()">Toggle Gravity</button>
+        <button onclick="toggleAccelerometer()">Toggle Accelerometer</button>
+        <br><br>
+        <label>Beer Density: <input type="range" id="beerDensity" min="1" max="10" value="4" oninput="updateDensity()"> <span id="beerDensityValue">4</span></label><br>
+        <label>Foam Density: <input type="range" id="foamDensity" min="1" max="8" value="3" oninput="updateDensity()"> <span id="foamDensityValue">3</span></label>
+    </div>
+
+    <canvas id="canvas" width="400" height="600"></canvas>
+
+    <div class="debug" id="debug">
+        Accelerometer: Not available<br>
+        Particles: 0<br>
+        Gravity: Normal
+    </div>
+
+    <div class="info">
+        🍺 Tilt your phone to move the beer around!<br>
+        Tap "Pour Beer" to fill the glass.<br>
+        Watch the foam float on top!
+    </div>
+
+    <script>
+        // Load LiquidFun dynamically with better error handling
+        function loadLiquidFun() {
+            return new Promise((resolve, reject) => {
+                // Try multiple paths
+                const paths = [
+                    '/liquidfun_v1.1.0.min.js',
+                    './liquidfun_v1.1.0.min.js',
+                    'liquidfun_v1.1.0.min.js'
+                ];
+                
+                let currentPath = 0;
+                
+                function tryPath() {
+                    if (currentPath >= paths.length) {
+                        reject(new Error('All paths failed'));
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = paths[currentPath];
+                    
+                    script.onload = () => {
+                        console.log(`LiquidFun loaded from: ${paths[currentPath]}`);
+                        resolve();
+                    };
+                    
+                    script.onerror = () => {
+                        console.warn(`Failed to load from: ${paths[currentPath]}`);
+                        currentPath++;
+                        document.head.removeChild(script);
+                        setTimeout(tryPath, 100);
+                    };
+                    
+                    document.head.appendChild(script);
+                }
+                
+                tryPath();
+            });
+        }
+    </script>
+    <script>
+        class BeerGlass {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.debug = document.getElementById('debug');
+                
+                // Try to get Box2D objects from different possible locations
+                this.b2World = window.b2World || Box2D?.b2World || Box2D?.Dynamics?.b2World;
+                this.b2Vec2 = window.b2Vec2 || Box2D?.b2Vec2 || Box2D?.Common?.Math?.b2Vec2;
+                this.b2BodyDef = window.b2BodyDef || Box2D?.b2BodyDef || Box2D?.Dynamics?.b2BodyDef;
+                this.b2_staticBody = window.b2_staticBody || Box2D?.b2_staticBody || Box2D?.Dynamics?.b2Body?.b2_staticBody || Box2D?.b2BodyType?.b2_staticBody || 0;
+                this.b2PolygonShape = window.b2PolygonShape || Box2D?.b2PolygonShape || Box2D?.Collision?.Shapes?.b2PolygonShape;
+                this.b2CircleShape = window.b2CircleShape || Box2D?.b2CircleShape || Box2D?.Collision?.Shapes?.b2CircleShape;
+                this.b2ParticleSystemDef = window.b2ParticleSystemDef || Box2D?.b2ParticleSystemDef;
+                this.b2ParticleGroupDef = window.b2ParticleGroupDef || Box2D?.b2ParticleGroupDef;
+                this.b2ParticleDef = window.b2ParticleDef || Box2D?.b2ParticleDef;
+                this.b2ParticleColor = window.b2ParticleColor || Box2D?.b2ParticleColor;
+                this.b2_waterParticle = window.b2_waterParticle || Box2D?.b2_waterParticle || Box2D?.b2ParticleFlag?.b2_waterParticle || 1;
+                this.b2_viscousParticle = window.b2_viscousParticle || Box2D?.b2_viscousParticle || Box2D?.b2ParticleFlag?.b2_viscousParticle || 64;
+                this.b2Transform = window.b2Transform || Box2D?.b2Transform;
+                this.b2Rot = window.b2Rot || Box2D?.b2Rot;
+                
+                if (!this.b2World) {
+                    console.error('Could not find b2World. Available objects:', Object.keys(window).filter(k => k.startsWith('b2')));
+                    throw new Error('Box2D objects not available');
+                }
+                
+                // Debug: Check which Box2D objects we have
+                const boxObjects = {
+                    b2World: !!this.b2World,
+                    b2Vec2: !!this.b2Vec2,
+                    b2BodyDef: !!this.b2BodyDef,
+                    b2_staticBody: !!this.b2_staticBody,
+                    b2PolygonShape: !!this.b2PolygonShape,
+                    b2CircleShape: !!this.b2CircleShape,
+                    b2ParticleSystemDef: !!this.b2ParticleSystemDef,
+                    b2ParticleGroupDef: !!this.b2ParticleGroupDef,
+                    b2ParticleColor: !!this.b2ParticleColor,
+                    b2_waterParticle: !!this.b2_waterParticle,
+                    b2_viscousParticle: !!this.b2_viscousParticle,
+                    b2Transform: !!this.b2Transform,
+                    b2Rot: !!this.b2Rot
+                };
+                console.log('Box2D objects availability:', boxObjects);
+                
+                if (!this.b2PolygonShape) {
+                    console.error('b2PolygonShape not found! Checking alternatives...');
+                    // Try more fallback locations
+                    this.b2PolygonShape = window.b2PolygonShape || 
+                                         Box2D?.b2PolygonShape || 
+                                         Box2D?.Collision?.Shapes?.b2PolygonShape ||
+                                         Box2D?.Shapes?.b2PolygonShape;
+                    console.log('After fallback search, b2PolygonShape:', this.b2PolygonShape);
+                }
+                
+                console.log('Box2D objects found successfully!');
+                
+                // Physics world setup
+                this.world = null;
+                this.glassBody = null;
+                this.beerParticleSystem = null;
+                this.foamParticleSystem = null;
+                
+                // Accelerometer data
+                this.gravity = { x: 0, y: -10 };
+                this.accelerometerSupported = false;
+                this.accelerometerEnabled = true; // Can be toggled on/off
+                
+                // Animation
+                this.animationId = null;
+                this.particleCount = 0;
+                this.gravityReversed = false;
+                
+                this.init();
+            }
+
+            // Helper function to set polygon shape vertices
+            setPolygonVertices(shape, vertices) {
+                if (typeof shape.Set === 'function') {
+                    shape.Set(vertices, vertices.length);
+                } else if (typeof shape.SetAsArray === 'function') {
+                    shape.SetAsArray(vertices);
+                } else if (typeof shape.SetVertices === 'function') {
+                    shape.SetVertices(vertices);
+                } else {
+                    // Fallback: try to set vertices directly
+                    shape.vertices = vertices;
+                    console.warn('Using fallback vertex setting for polygon shape');
+                }
+            }
+
+            init() {
+                this.setupPhysics();
+                this.createGlass();
+                this.setupAccelerometer();
+                this.animate();
+            }
+
+            setupPhysics() {
+                // Create Box2D world with gravity pointing down (negative Y in Box2D coordinates)
+                const gravity = new this.b2Vec2(0, -10);
+                this.world = new this.b2World(gravity, true);
+                
+                console.log('Physics world created successfully');
+                
+                // Set up particle system (following the demo pattern)
+                const particleSystemDef = new this.b2ParticleSystemDef();
+                particleSystemDef.set_radius(0.15); // Slightly larger radius for better collision
+                particleSystemDef.set_density(1.0); // Standard density for beer
+                this.beerParticleSystem = this.world.CreateParticleSystem(particleSystemDef);
+                this.beerParticleSystem.SetMaxParticleCount(5000); // Set max count like demo
+                
+                // Foam particle system (separate for different properties)
+                const foamParticleSystemDef = new this.b2ParticleSystemDef();
+                foamParticleSystemDef.set_radius(0.12); // Even smaller for foam
+                foamParticleSystemDef.set_density(0.3); // Much lighter density for foam to float
+                this.foamParticleSystem = this.world.CreateParticleSystem(foamParticleSystemDef);
+                this.foamParticleSystem.SetMaxParticleCount(2000);
+                
+                console.log('Particle systems created with density-based buoyancy configuration');
+            }
+
+            createGlass() {
+                // Create static body for glass walls
+                const bodyDef = new this.b2BodyDef();
+                bodyDef.type = this.b2_staticBody || 0; // Use 0 as fallback for static body
+                
+                // Set position using different methods depending on API
+                if (bodyDef.position && typeof bodyDef.position.Set === 'function') {
+                    bodyDef.position.Set(0, 0);
+                } else if (bodyDef.position) {
+                    bodyDef.position.x = 0;
+                    bodyDef.position.y = 0;
+                } else {
+                    // Create position vector if it doesn't exist
+                    bodyDef.position = new this.b2Vec2(0, 0);
+                }
+                
+                this.glassBody = this.world.CreateBody(bodyDef);
+
+                console.log('Creating glass walls...');
+
+                // Use a more reliable wall creation method with proper Box2D shapes
+                // Bottom wall (floor of glass)
+                this.createSimpleWall(0, 4.5, 8, 1); // Center at (0, 4.5), width 8, height 1
+                console.log('Created glass bottom');
+                
+                // Left wall 
+                this.createSimpleWall(-3.75, 12.5, 0.5, 15); // Center at (-3.75, 12.5), width 0.5, height 15
+                console.log('Created left wall');
+                
+                // Right wall
+                this.createSimpleWall(3.75, 12.5, 0.5, 15); // Center at (3.75, 12.5), width 0.5, height 15
+                console.log('Created right wall');
+
+                // Create ground floor way below everything to catch any particles that escape
+                this.createSimpleWall(0, -15, 30, 2); // Wide floor at bottom
+                console.log('Created ground floor');
+                
+                console.log('Glass creation complete - particles should be contained');
+            }
+
+            createSimpleWall(centerX, centerY, width, height) {
+                const shape = new this.b2PolygonShape();
+                // Use SetAsBox which is more reliable than setting vertices manually
+                if (typeof shape.SetAsBox === 'function') {
+                    shape.SetAsBox(width / 2, height / 2, new this.b2Vec2(centerX, centerY), 0);
+                } else {
+                    // Fallback: manual vertex setting
+                    const vertices = [
+                        new this.b2Vec2(centerX - width/2, centerY - height/2),
+                        new this.b2Vec2(centerX + width/2, centerY - height/2),
+                        new this.b2Vec2(centerX + width/2, centerY + height/2),
+                        new this.b2Vec2(centerX - width/2, centerY + height/2)
+                    ];
+                    this.setPolygonVertices(shape, vertices);
+                }
+                
+                const fixture = this.glassBody.CreateFixture(shape, 0);
+                console.log(`Created wall at (${centerX}, ${centerY}) with size ${width}x${height}`);
+                return fixture;
+            }
+
+            createWall(x1, y1, x2, y2) {
+                const shape = new this.b2PolygonShape();
+                const vertices = [
+                    new this.b2Vec2(x1, y1),
+                    new this.b2Vec2(x2, y1),
+                    new this.b2Vec2(x2, y2),
+                    new this.b2Vec2(x1, y2)
+                ];
+                this.setPolygonVertices(shape, vertices);
+                this.glassBody.CreateFixture(shape, 0);
+            }
+
+            createTaperedWall(x1, y1, x2, y2, thickness) {
+                const shape = new this.b2PolygonShape();
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const nx = -dy / length * thickness;
+                const ny = dx / length * thickness;
+
+                const vertices = [
+                    new this.b2Vec2(x1, y1),
+                    new this.b2Vec2(x2, y2),
+                    new this.b2Vec2(x2 + nx, y2 + ny),
+                    new this.b2Vec2(x1 + nx, y1 + ny)
+                ];
+                this.setPolygonVertices(shape, vertices);
+                this.glassBody.CreateFixture(shape, 0);
+            }
+
+            setupAccelerometer() {
+                if (window.DeviceMotionEvent) {
+                    window.addEventListener('devicemotion', (event) => {
+                        if (event.accelerationIncludingGravity && this.accelerometerEnabled) {
+                            // Get raw accelerometer data
+                            const rawX = event.accelerationIncludingGravity.x || 0;
+                            const rawY = event.accelerationIncludingGravity.y || 0;
+                            const rawZ = event.accelerationIncludingGravity.z || 0;
+                            
+                            // Add deadzone to ignore small movements (phone at rest)
+                            const deadzone = 1.0;
+                            const filteredX = Math.abs(rawX) > deadzone ? rawX : 0;
+                            const filteredY = Math.abs(rawY) > deadzone ? rawY : 0;
+                            
+                            // Convert phone orientation to world gravity
+                            // When phone is upright: x=0, y=~9.8, z=0 (gravity down)
+                            // When phone tilts left: x increases (positive)
+                            // When phone tilts right: x decreases (negative)
+                            
+                            const gravityScale = 0.8; // Reduce sensitivity
+                            const baseGravity = -10; // Always maintain downward gravity
+                            
+                            // Horizontal gravity based on phone tilt
+                            const gravityX = -filteredX * gravityScale;
+                            
+                            // Vertical gravity - always keep some downward force
+                            // When phone is right-side up, y is positive (9.8)
+                            // When phone is upside down, y becomes negative
+                            let gravityY = baseGravity;
+                            if (Math.abs(filteredY) > 2) { // Only adjust if significant tilt
+                                gravityY = filteredY > 0 ? baseGravity : baseGravity * 0.3; // Reduce but don't reverse
+                            }
+                            
+                            // Apply the new gravity
+                            this.world.SetGravity(new this.b2Vec2(gravityX, gravityY));
+                            this.accelerometerSupported = true;
+                            
+                            // Debug output (remove in production)
+                            if (Math.abs(gravityX) > 1 || Math.abs(gravityY - baseGravity) > 1) {
+                                console.log(`Accelerometer: raw(${rawX.toFixed(1)}, ${rawY.toFixed(1)}) -> gravity(${gravityX.toFixed(1)}, ${gravityY.toFixed(1)})`);
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback: mouse movement for desktop testing
+                    this.canvas.addEventListener('mousemove', (event) => {
+                        const rect = this.canvas.getBoundingClientRect();
+                        const x = (event.clientX - rect.left - rect.width / 2) / rect.width * 20;
+                        const y = (event.clientY - rect.top - rect.height / 2) / rect.height * 20;
+                        
+                        this.gravity.x = x;
+                        this.gravity.y = Math.abs(y) + 5;
+                        this.world.SetGravity(new this.b2Vec2(this.gravity.x, this.gravity.y));
+                    });
+                }
+            }
+
+            pourBeer() {
+                console.log('pourBeer called - creating particle groups like the demo');
+                
+                // Create particle groups (following the liquidfun.js-demo pattern)
+                for (let i = 0; i < 5; i++) {
+                    try {
+                        const color = new this.b2ParticleColor(255, 193, 7, 255); // Golden beer color
+                        const flags = 0; // Default flags like demo
+                        
+                        // Create particle group definition (like demo)
+                        const pgd = new this.b2ParticleGroupDef();
+                        const shape = new this.b2CircleShape();
+                        
+                        // Set the circle radius and position
+                        const radius = 0.5 + Math.random() * 0.3; // Varying radius
+                        const x = (Math.random() - 0.5) * 4; // Random position across glass width
+                        const y = 22 + i * 2; // Start above glass, space them out vertically
+                        
+                        shape.set_m_radius(radius);
+                        shape.set_m_p(new this.b2Vec2(x, y));
+                        
+                        pgd.set_shape(shape);
+                        pgd.set_color(color);
+                        pgd.set_flags(flags);
+                        
+                        // Create the particle group
+                        const group = this.beerParticleSystem.CreateParticleGroup(pgd);
+                        
+                        console.log(`Created particle group ${i} at (${x.toFixed(1)}, ${y.toFixed(1)}) with radius ${radius.toFixed(2)}`);
+                        
+                    } catch (e) {
+                        console.error('Failed to create particle group', i, ':', e);
+                        break;
+                    }
+                }
+                
+                console.log('Total particles after pouring:', this.beerParticleSystem.GetParticleCount());
+            }
+
+            addFoam() {
+                console.log('addFoam called - creating foam particle groups like beer');
+                
+                // Create particle groups (following the same pattern as beer but lighter)
+                for (let i = 0; i < 8; i++) { // Fewer groups than beer for thinner layer
+                    try {
+                        const color = new this.b2ParticleColor(255, 255, 255, 200 + Math.random() * 55); // White foam with variation
+                        const flags = this.b2_elasticParticle | this.b2_viscousParticle; // Elastic and viscous for floating behavior
+                        
+                        // Create particle group definition (like beer)
+                        const pgd = new this.b2ParticleGroupDef();
+                        const shape = new this.b2CircleShape();
+                        
+                        // Smaller radius for foam - lighter particles
+                        const radius = 0.3 + Math.random() * 0.2; // Smaller than beer particles
+                        const x = (Math.random() - 0.5) * 5; // Spread across glass width
+                        const y = 22 + i * 0.8; // Start above glass, closer spacing for thin layer
+                        
+                        shape.set_m_radius(radius);
+                        shape.set_m_p(new this.b2Vec2(x, y));
+                        
+                        pgd.set_shape(shape);
+                        pgd.set_color(color);
+                        pgd.set_flags(flags);
+                        
+                        // Create the particle group
+                        const group = this.foamParticleSystem.CreateParticleGroup(pgd);
+                        
+                        console.log(`Created foam group ${i} at (${x.toFixed(1)}, ${y.toFixed(1)}) with radius ${radius.toFixed(2)}`);
+                        
+                    } catch (e) {
+                        console.error('Failed to create foam particle group', i, ':', e);
+                        break;
+                    }
+                }
+                
+                console.log('Total foam particles after adding:', this.foamParticleSystem.GetParticleCount());
+            }
+
+            fillGlassWithBeer() {
+                console.log('fillGlassWithBeer called - creating grid of beer particles');
+                
+                const density = parseInt(document.getElementById('beerDensity').value);
+                const particleSpacing = 0.8 - (density * 0.05); // Closer spacing for higher density
+                
+                // Glass dimensions (inside the walls)
+                const glassLeft = -3.3;
+                const glassRight = 3.3;
+                const glassBottom = 5.2;
+                const glassHeight = 7; // Fill halfway up (glass is about 15 units tall)
+                
+                let particleCount = 0;
+                
+                // Create grid of particles
+                for (let y = glassBottom; y < glassBottom + glassHeight; y += particleSpacing) {
+                    for (let x = glassLeft; x <= glassRight; x += particleSpacing) {
+                        try {
+                            const color = new this.b2ParticleColor(
+                                255, 
+                                193 + Math.random() * 30, // Slight color variation
+                                7 + Math.random() * 20, 
+                                255
+                            );
+                            
+                            // Create particle group definition
+                            const pgd = new this.b2ParticleGroupDef();
+                            const shape = new this.b2CircleShape();
+                            
+                            // Small radius for grid particles
+                            const radius = 0.15 + Math.random() * 0.1;
+                            shape.set_m_radius(radius);
+                            shape.set_m_p(new this.b2Vec2(
+                                x + (Math.random() - 0.5) * 0.2, // Small random offset
+                                y + (Math.random() - 0.5) * 0.2
+                            ));
+                            
+                            pgd.set_shape(shape);
+                            pgd.set_color(color);
+                            pgd.set_flags(0);
+                            
+                            // Create the particle group
+                            const group = this.beerParticleSystem.CreateParticleGroup(pgd);
+                            particleCount++;
+                            
+                        } catch (e) {
+                            console.error('Failed to create grid beer particle at', x, y, ':', e);
+                            break;
+                        }
+                    }
+                }
+                
+                console.log(`Created ${particleCount} beer particles in grid pattern`);
+                console.log('Total beer particles:', this.beerParticleSystem.GetParticleCount());
+            }
+
+            addFoamLayer() {
+                console.log('addFoamLayer called - creating grid of foam particle groups');
+                
+                const density = parseInt(document.getElementById('foamDensity').value);
+                const particleSpacing = 1.0 - (density * 0.08); // Closer spacing for higher density
+                
+                // Glass dimensions (inside the walls)
+                const glassLeft = -3.2;
+                const glassRight = 3.2;
+                const foamBottom = 12; // Start above the beer level
+                const foamHeight = 1.5; // Thin foam layer - reduced from 2
+                
+                let particleCount = 0;
+                
+                // Create grid of foam particle groups (like beer but smaller)
+                for (let y = foamBottom; y < foamBottom + foamHeight; y += particleSpacing) {
+                    for (let x = glassLeft; x <= glassRight; x += particleSpacing) {
+                        try {
+                            // Use particle groups like beer for better physics behavior
+                            const color = new this.b2ParticleColor(
+                                255, 
+                                255, 
+                                255, 
+                                180 + Math.random() * 40
+                            );
+                            const flags = this.b2_elasticParticle | this.b2_viscousParticle; // Elastic and viscous for floating behavior
+                            
+                            // Create particle group definition
+                            const pgd = new this.b2ParticleGroupDef();
+                            const shape = new this.b2CircleShape();
+                            
+                            // Smaller radius for foam particles
+                            const radius = 0.08 + Math.random() * 0.05; // Much smaller than beer
+                            shape.set_m_radius(radius);
+                            shape.set_m_p(new this.b2Vec2(
+                                x + (Math.random() - 0.5) * 0.15, // Small random offset
+                                y + (Math.random() - 0.5) * 0.15
+                            ));
+                            
+                            pgd.set_shape(shape);
+                            pgd.set_color(color);
+                            pgd.set_flags(flags);
+                            
+                            // Create the particle group
+                            const group = this.foamParticleSystem.CreateParticleGroup(pgd);
+                            particleCount++;
+                            
+                        } catch (e) {
+                            console.error('Failed to create foam particle group at', x, y, ':', e);
+                            break;
+                        }
+                    }
+                }
+                
+                console.log(`Created ${particleCount} foam particle groups in grid pattern`);
+                console.log('Total foam particles:', this.foamParticleSystem.GetParticleCount());
+            }
+
+            resetGlass() {
+                // Destroy all particles
+                this.beerParticleSystem.DestroyParticlesInShape(
+                    new this.b2PolygonShape(), 
+                    new this.b2Transform(new this.b2Vec2(0, 0), new this.b2Rot(0))
+                );
+                this.foamParticleSystem.DestroyParticlesInShape(
+                    new this.b2PolygonShape(), 
+                    new this.b2Transform(new this.b2Vec2(0, 0), new this.b2Rot(0))
+                );
+                this.particleCount = 0;
+            }
+
+            toggleGravity() {
+                this.gravityReversed = !this.gravityReversed;
+                const gravityMultiplier = this.gravityReversed ? -1 : 1;
+                this.world.SetGravity(new b2Vec2(this.gravity.x, this.gravity.y * gravityMultiplier));
+            }
+
+            toggleAccelerometer() {
+                this.accelerometerEnabled = !this.accelerometerEnabled;
+                if (!this.accelerometerEnabled) {
+                    // Reset to default gravity when disabled
+                    this.world.SetGravity(new this.b2Vec2(0, -10));
+                }
+                console.log('Accelerometer', this.accelerometerEnabled ? 'enabled' : 'disabled');
+            }
+
+            worldToCanvas(worldPos) {
+                return {
+                    x: (worldPos.x + 15) * (this.canvas.width / 30),
+                    y: this.canvas.height - (worldPos.y + 5) * (this.canvas.height / 30) // Flip Y coordinate
+                };
+            }
+
+            render() {
+                // Clear canvas
+                this.ctx.fillStyle = 'rgba(26, 26, 26, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw glass outline
+                this.drawGlass();
+
+                // Draw beer particles
+                this.drawParticles(this.beerParticleSystem, '#FFC107'); // Golden beer
+
+                // Draw foam particles
+                this.drawParticles(this.foamParticleSystem, '#FFFFFF'); // White foam
+
+                // Update debug info
+                this.updateDebugInfo();
+            }
+
+            drawGlass() {
+                this.ctx.strokeStyle = '#8B4513';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                
+                // Glass outline (simple rectangular shape matching our collision walls)
+                const bottomLeft = this.worldToCanvas({ x: -4, y: 5 });
+                const bottomRight = this.worldToCanvas({ x: 4, y: 5 });
+                const topLeft = this.worldToCanvas({ x: -4, y: 20 });
+                const topRight = this.worldToCanvas({ x: 4, y: 20 });
+
+                // Draw glass outline
+                this.ctx.moveTo(bottomLeft.x, bottomLeft.y);
+                this.ctx.lineTo(topLeft.x, topLeft.y);
+                this.ctx.lineTo(topRight.x, topRight.y);
+                this.ctx.lineTo(bottomRight.x, bottomRight.y);
+                this.ctx.lineTo(bottomLeft.x, bottomLeft.y);
+                
+                this.ctx.stroke();
+
+                // DEBUG: Draw collision shapes in red to match our new wall positions
+                this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+                this.ctx.lineWidth = 2;
+                
+                // Bottom wall (floor)
+                const bottomWallTL = this.worldToCanvas({ x: -4, y: 4 });
+                const bottomWallBR = this.worldToCanvas({ x: 4, y: 5 });
+                this.ctx.fillRect(bottomWallTL.x, bottomWallTL.y, bottomWallBR.x - bottomWallTL.x, bottomWallBR.y - bottomWallTL.y);
+                this.ctx.strokeRect(bottomWallTL.x, bottomWallTL.y, bottomWallBR.x - bottomWallTL.x, bottomWallBR.y - bottomWallTL.y);
+                
+                // Left wall 
+                const leftWallTL = this.worldToCanvas({ x: -4, y: 5 });
+                const leftWallBR = this.worldToCanvas({ x: -3.5, y: 20 });
+                this.ctx.fillRect(leftWallTL.x, leftWallTL.y, leftWallBR.x - leftWallTL.x, leftWallBR.y - leftWallTL.y);
+                this.ctx.strokeRect(leftWallTL.x, leftWallTL.y, leftWallBR.x - leftWallTL.x, leftWallBR.y - leftWallTL.y);
+                
+                // Right wall
+                const rightWallTL = this.worldToCanvas({ x: 3.5, y: 5 });
+                const rightWallBR = this.worldToCanvas({ x: 4, y: 20 });
+                this.ctx.fillRect(rightWallTL.x, rightWallTL.y, rightWallBR.x - rightWallTL.x, rightWallBR.y - rightWallTL.y);
+                this.ctx.strokeRect(rightWallTL.x, rightWallTL.y, rightWallBR.x - rightWallTL.x, rightWallBR.y - rightWallTL.y);
+
+                // Add glass shine effect
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                this.ctx.moveTo(topLeft.x + 10, topLeft.y);
+                this.ctx.lineTo(bottomLeft.x + 5, bottomLeft.y - 50);
+                this.ctx.stroke();
+            }
+
+            drawParticles(particleSystem, color) {
+                const particleCount = particleSystem.GetParticleCount();
+                if (particleCount === 0) return;
+
+                console.log(`Drawing particles for system with ${particleCount} particles`);
+                
+                // Use the correct liquidfun.js-demo approach for accessing particle positions
+                try {
+                    // Get position buffer pointer (Emscripten style from the demo)
+                    const pos_offset = particleSystem.GetPositionBuffer();
+                    console.log('Position buffer offset:', pos_offset, typeof pos_offset);
+                    
+                    if (pos_offset && pos_offset.e !== undefined) {
+                        console.log('Found Emscripten pointer:', pos_offset.e);
+                        
+                        // Read memory into JS Array using HEAPU8 buffer and the .e offset (from demo)
+                        const raw_pos = new Float32Array(Module.HEAPU8.buffer, pos_offset.e, particleCount * 2);
+                        console.log('Raw position data (first 6 values):', Array.from(raw_pos.slice(0, 6)));
+                        
+                        // Render particles at their actual positions
+                        this.ctx.fillStyle = color;
+                        this.ctx.strokeStyle = color === '#FFC107' ? '#FFB300' : '#E0E0E0';
+                        this.ctx.lineWidth = 1;
+                        
+                        let renderedCount = 0;
+                        for (let i = 0; i < particleCount; i++) {
+                            // Get physics coordinates
+                            const physX = raw_pos[i * 2];
+                            const physY = raw_pos[i * 2 + 1];
+                            
+                            // Convert to canvas coordinates
+                            const canvasPos = this.worldToCanvas({ x: physX, y: physY });
+                            
+                            // More lenient bounds check - allow particles to be visible even when outside glass
+                            if (canvasPos.x >= -100 && canvasPos.x <= this.canvas.width + 100 &&
+                                canvasPos.y >= -100 && canvasPos.y <= this.canvas.height + 100) {
+                                
+                                this.ctx.beginPath();
+                                this.ctx.arc(canvasPos.x, canvasPos.y, 
+                                    color === '#FFC107' ? 6 : 4, // Beer particles slightly larger
+                                    0, Math.PI * 2);
+                                this.ctx.fill();
+                                this.ctx.stroke();
+                                renderedCount++;
+                                
+                                // Debug output for first few particles
+                                if (i < 3) {
+                                    console.log(`Particle ${i}: physics(${physX.toFixed(1)}, ${physY.toFixed(1)}) -> canvas(${canvasPos.x.toFixed(0)}, ${canvasPos.y.toFixed(0)})`);
+                                }
+                            }
+                        }
+                        
+                        console.log(`✅ Successfully rendered ${renderedCount}/${particleCount} real physics particles`);
+                        return; // Success - exit early
+                        
+                    } else {
+                        console.log('Position buffer offset not available or no .e property');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error accessing particle positions:', error);
+                }
+                
+                // Fallback: Draw test particles to verify rendering works
+                console.log('Drawing test particles as fallback...');
+                this.ctx.fillStyle = '#FF0000'; // Red for visibility
+                
+                // Draw test particles at known positions
+                for (let i = 0; i < 3; i++) {
+                    const testPos = this.worldToCanvas({ x: i * 2 - 2, y: 10 + i });
+                    this.ctx.beginPath();
+                    this.ctx.arc(testPos.x, testPos.y, 10, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            updateDebugInfo() {
+                const accelerometerText = this.accelerometerSupported ? 
+                    `X: ${this.gravity.x.toFixed(2)}, Y: ${this.gravity.y.toFixed(2)}` : 
+                    'Not available (use mouse)';
+                
+                const totalParticles = this.beerParticleSystem.GetParticleCount() + 
+                                     this.foamParticleSystem.GetParticleCount();
+                
+                this.debug.innerHTML = `
+                    Accelerometer: ${accelerometerText}<br>
+                    Particles: ${totalParticles}<br>
+                    Gravity: ${this.gravityReversed ? 'Reversed' : 'Normal'}
+                `;
+            }
+
+            applyBuoyancyForces() {
+                // Apply upward buoyancy force to foam particles to make them float
+                const foamCount = this.foamParticleSystem.GetParticleCount();
+                if (foamCount === 0) return;
+
+                try {
+                    // Get foam particle positions and velocities
+                    const posOffset = this.foamParticleSystem.GetPositionBuffer();
+                    const velOffset = this.foamParticleSystem.GetVelocityBuffer();
+                    
+                    if (posOffset && posOffset.e !== undefined && velOffset && velOffset.e !== undefined) {
+                        const positions = new Float32Array(Module.HEAPU8.buffer, posOffset.e, foamCount * 2);
+                        const velocities = new Float32Array(Module.HEAPU8.buffer, velOffset.e, foamCount * 2);
+                        
+                        // Apply buoyancy force to each foam particle
+                        for (let i = 0; i < foamCount; i++) {
+                            const posX = positions[i * 2];
+                            const posY = positions[i * 2 + 1];
+                            const velY = velocities[i * 2 + 1];
+                            
+                            // Check if foam particle is below a certain height (in liquid)
+                            // Apply stronger upward force if the particle is deeper in the liquid
+                            if (posY < 15) { // Below the expected foam line
+                                const buoyancyStrength = Math.max(0, (15 - posY) * 0.5); // Stronger force when deeper
+                                const dampening = Math.max(0, 1 - Math.abs(velY) * 0.1); // Reduce force if already moving fast upward
+                                
+                                // Apply upward force (positive Y direction in Box2D)
+                                const forceY = buoyancyStrength * dampening * 3;
+                                
+                                // Modify velocity directly (simpler approach)
+                                velocities[i * 2 + 1] += forceY * (1/60); // Add upward velocity
+                                
+                                // Limit maximum upward velocity to prevent particles shooting up
+                                if (velocities[i * 2 + 1] > 5) {
+                                    velocities[i * 2 + 1] = 5;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Silently handle errors to avoid spam
+                }
+            }
+
+            animate() {
+                // Apply buoyancy forces to foam particles
+                this.applyBuoyancyForces();
+                
+                // Step physics simulation
+                try {
+                    this.world.Step(1/60, 8, 3);
+                    
+                    // Debug: Log particle count every few frames
+                    this.frameCount = (this.frameCount || 0) + 1;
+                    if (this.frameCount % 60 === 0) { // Every second
+                        const beerCount = this.beerParticleSystem.GetParticleCount();
+                        const foamCount = this.foamParticleSystem.GetParticleCount();
+                        console.log(`Frame ${this.frameCount}: Beer particles: ${beerCount}, Foam particles: ${foamCount}`);
+                    }
+                    
+                } catch (e) {
+                    console.error('Physics step failed:', e);
+                }
+
+                // Render frame
+                this.render();
+
+                // Continue animation
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+
+            destroy() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+        }
+
+        // Global functions for buttons
+        let beerGlass;
+
+        function pourBeer() {
+            if (beerGlass) beerGlass.pourBeer();
+        }
+
+        function addFoam() {
+            if (beerGlass) beerGlass.addFoam();
+        }
+
+        function resetGlass() {
+            if (beerGlass) beerGlass.resetGlass();
+        }
+
+        function toggleGravity() {
+            if (beerGlass) beerGlass.toggleGravity();
+        }
+
+        function toggleAccelerometer() {
+            if (beerGlass) beerGlass.toggleAccelerometer();
+        }
+
+        function fillGlassWithBeer() {
+            if (beerGlass) beerGlass.fillGlassWithBeer();
+        }
+
+        function addFoamLayer() {
+            if (beerGlass) beerGlass.addFoamLayer();
+        }
+
+        function updateDensity() {
+            const beerDensity = document.getElementById('beerDensity').value;
+            const foamDensity = document.getElementById('foamDensity').value;
+            document.getElementById('beerDensityValue').textContent = beerDensity;
+            document.getElementById('foamDensityValue').textContent = foamDensity;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            console.log('Page loaded, attempting to load LiquidFun...');
+            
+            try {
+                // Try to load LiquidFun
+                await loadLiquidFun();
+                
+                // Wait a bit more for the library to fully initialize
+                setTimeout(() => {
+                    console.log('Checking available objects:');
+                    console.log('b2World:', typeof b2World);
+                    console.log('window.b2World:', typeof window.b2World);
+                    console.log('Box2D:', typeof Box2D);
+                    console.log('window.Box2D:', typeof window.Box2D);
+                    
+                    // Check what's actually available in the global scope
+                    const box2dObjects = Object.keys(window).filter(key => key.startsWith('b2'));
+                    console.log('Available b2 objects:', box2dObjects);
+                    
+                    if (typeof b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
+                        console.log('LiquidFun initialized successfully!');
+                        beerGlass = new BeerGlass();
+                    } else if (typeof Box2D !== 'undefined') {
+                        console.log('Box2D available, trying alternative initialization...');
+                        // Try to use Box2D module if b2World is not directly available
+                        // Map all necessary Box2D objects to window
+                        window.b2World = Box2D.b2World || Box2D.Dynamics?.b2World;
+                        window.b2Vec2 = Box2D.b2Vec2 || Box2D.Common?.Math?.b2Vec2;
+                        window.b2BodyDef = Box2D.b2BodyDef || Box2D.Dynamics?.b2BodyDef;
+                        window.b2_staticBody = Box2D.b2_staticBody || Box2D.Dynamics?.b2Body?.b2_staticBody || Box2D.b2BodyType?.b2_staticBody || 0;
+                        window.b2PolygonShape = Box2D.b2PolygonShape || Box2D.Collision?.Shapes?.b2PolygonShape;
+                        window.b2CircleShape = Box2D.b2CircleShape || Box2D.Collision?.Shapes?.b2CircleShape;
+                        window.b2ParticleSystemDef = Box2D.b2ParticleSystemDef;
+                        window.b2ParticleGroupDef = Box2D.b2ParticleGroupDef;
+                        window.b2ParticleDef = Box2D.b2ParticleDef;
+                        window.b2ParticleColor = Box2D.b2ParticleColor;
+                        window.b2_waterParticle = Box2D.b2_waterParticle || Box2D.b2ParticleFlag?.b2_waterParticle || 1;
+                        window.b2_viscousParticle = Box2D.b2_viscousParticle || Box2D.b2ParticleFlag?.b2_viscousParticle || 64;
+                        window.b2Transform = Box2D.b2Transform || Box2D.Common?.Math?.b2Transform;
+                        window.b2Rot = Box2D.b2Rot || Box2D.Common?.Math?.b2Rot;
+                        
+                        console.log('Mapped Box2D objects to window:', {
+                            b2World: !!window.b2World,
+                            b2Vec2: !!window.b2Vec2,
+                            b2BodyDef: !!window.b2BodyDef,
+                            b2PolygonShape: !!window.b2PolygonShape,
+                            b2CircleShape: !!window.b2CircleShape,
+                            b2ParticleSystemDef: !!window.b2ParticleSystemDef
+                        });
+                        
+                        if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
+                            beerGlass = new BeerGlass();
+                        } else {
+                            console.error('Could not initialize all required Box2D objects');
+                            console.log('Missing objects:', {
+                                b2World: !window.b2World,
+                                b2Vec2: !window.b2Vec2,
+                                b2PolygonShape: !window.b2PolygonShape
+                            });
+                        }
+                    } else {
+                        console.error('LiquidFun loaded but b2World not available');
+                        console.log('Available global objects:', Object.keys(window).slice(0, 20));
+                        document.getElementById('debug').innerHTML = 'ERROR: LiquidFun not properly initialized<br>Available objects: ' + box2dObjects.join(', ') + '<br>Please refresh the page';
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Failed to load LiquidFun:', error);
+                document.getElementById('debug').innerHTML = 'ERROR: Could not load LiquidFun library<br>Check console for details<br>Please refresh the page';
+            }
+        });
+
+        // Global functions for buttons
+        function pourBeer() {
+            if (beerGlass) beerGlass.pourBeer();
+        }
+
+        function addFoam() {
+            if (beerGlass) beerGlass.addFoam();
+        }
+
+        function resetGlass() {
+            if (beerGlass) beerGlass.resetGlass();
+        }
+
+        function toggleGravity() {
+            if (beerGlass) beerGlass.toggleGravity();
+        }
+
+        function toggleAccelerometer() {
+            if (beerGlass) beerGlass.toggleAccelerometer();
+        }
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (beerGlass) {
+                beerGlass.destroy();
+            }
+        });
+    </script>
+</body>
+</html>
