@@ -108,7 +108,23 @@ class ContractServiceV2 {
       };
     } catch (error) {
       console.error('Error getting user info:', error);
-      return null;
+      // Fallback to direct users mapping
+      try {
+        const userInfo = await this.distributorContract.users(address);
+        return {
+          username: userInfo.username,
+          isTrusted: userInfo.isTrusted,
+          isActive: userInfo.isActive,
+          referrer: userInfo.referrer,
+          referralCount: Number(userInfo.referralCount),
+          totalEarned: ethers.formatEther(userInfo.totalEarned),
+          pendingRewards: '0', // Not available in users mapping
+          joinTime: Number(userInfo.joinTime)
+        };
+      } catch (fallbackError) {
+        console.error('Error getting user info from users mapping:', fallbackError);
+        return null;
+      }
     }
   }
 
