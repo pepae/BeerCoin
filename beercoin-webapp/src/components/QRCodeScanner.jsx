@@ -6,7 +6,7 @@ import { STORAGE_KEYS, APP_CONFIG } from '../config';
 import contractServiceV2 from '../lib/contractServiceV2';
 import '../utils/cameraDebug.js'; // Load camera debug utilities
 
-const QRCodeScanner = ({ setActivePage }) => {
+const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
   const { wallet, isRegistered, isTrusted, sendXDai } = useWallet();
   // Poll for trusted status (debug only, no auto-navigation)
   useEffect(() => {
@@ -380,6 +380,33 @@ const QRCodeScanner = ({ setActivePage }) => {
     }
   };
 
+  const handleSendToUser = async () => {
+    if (!scannedData || !scannedData.address) {
+      setError('No valid address found');
+      return;
+    }
+    
+    try {
+      // Check if the user is registered by trying to get their info
+      const userInfo = await contractServiceV2.getUserInfo(scannedData.address);
+      
+      if (userInfo.success && userInfo.username) {
+        // User is registered, navigate to send page with prefilled address
+        setPrefilledSendData({ 
+          address: scannedData.address, 
+          username: userInfo.username 
+        });
+        setActivePage('send');
+      } else {
+        // User is not registered, just show regular send gas option
+        setError('This address is not registered. You can only send gas to unregistered users.');
+      }
+    } catch (err) {
+      console.error('Error checking user registration:', err);
+      setError('Failed to check user registration status');
+    }
+  };
+
   const formatAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -531,9 +558,17 @@ const QRCodeScanner = ({ setActivePage }) => {
               </div>
               
               <div className="mt-6 space-y-4">
+                <button
+                  className="beer-button w-full"
+                  onClick={handleSendToUser}
+                  disabled={loading}
+                >
+                  {loading ? 'Checking...' : 'Send BEER/xDAI'}
+                </button>
+                
                 {isTrusted && (
                   <button
-                    className="beer-button w-full"
+                    className="beer-button-secondary w-full"
                     onClick={handleSendGas}
                     disabled={loading}
                   >

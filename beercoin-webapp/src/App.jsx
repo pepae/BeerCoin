@@ -15,6 +15,7 @@ import './App.css';
 const AppContent = () => {
   const { wallet, isRegistered } = useWallet();
   const [activePage, setActivePage] = useState('dashboard');
+  const [prefilledSendData, setPrefilledSendData] = useState(null);
 
   // Set initial page based on wallet and registration status, but don't override manual navigation
   useEffect(() => {
@@ -55,9 +56,9 @@ const AppContent = () => {
       case 'qr':
         return <QRCodeDisplay setActivePage={setActivePage} />;
       case 'scan':
-        return <QRCodeScanner setActivePage={setActivePage} />;
+        return <QRCodeScanner setActivePage={setActivePage} setPrefilledSendData={setPrefilledSendData} />;
       case 'send':
-        return <SendBeer />;
+        return <SendBeer prefilledData={prefilledSendData} setPrefilledData={setPrefilledSendData} />;
       case 'wallet':
         return <Dashboard />;
       case 'register':

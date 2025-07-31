@@ -1,18 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import useContractData from '../hooks/useContractData';
 
-const SendBeer = () => {
+const SendBeer = ({ prefilledData, setPrefilledData }) => {
   const { wallet, balance } = useWallet();
   const { beerBalance, transferBeer, transferXDai } = useContractData();
   
   const [recipient, setRecipient] = useState('');
+  const [recipientUsername, setRecipientUsername] = useState('');
   const [amount, setAmount] = useState('');
   const [tokenType, setTokenType] = useState('BEER'); // 'BEER' or 'xDAI'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Handle prefilled data
+  useEffect(() => {
+    if (prefilledData && prefilledData.address) {
+      setRecipient(prefilledData.address);
+      setRecipientUsername(prefilledData.username || '');
+      // Clear the prefilled data after using it
+      if (setPrefilledData) {
+        setPrefilledData(null);
+      }
+    }
+  }, [prefilledData, setPrefilledData]);
 
   if (!wallet) {
     return null;
@@ -28,6 +41,8 @@ const SendBeer = () => {
 
   const handleRecipientChange = (e) => {
     setRecipient(e.target.value);
+    // Clear username when address is manually changed
+    setRecipientUsername('');
   };
 
   const handleSubmit = (e) => {
@@ -70,8 +85,9 @@ const SendBeer = () => {
         await transferXDai(recipient, amount);
       }
       
-      setSuccess(`Successfully sent ${amount} ${tokenType} to ${recipient.substring(0, 6)}...${recipient.substring(recipient.length - 4)}`);
+      setSuccess(`Successfully sent ${amount} ${tokenType} to ${recipientUsername ? recipientUsername : `${recipient.substring(0, 6)}...${recipient.substring(recipient.length - 4)}`}`);
       setRecipient('');
+      setRecipientUsername('');
       setAmount('');
       setShowConfirm(false);
       
@@ -147,6 +163,11 @@ const SendBeer = () => {
               onChange={handleRecipientChange}
               required
             />
+            {recipientUsername && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Sending to: <span className="font-medium">{recipientUsername}</span>
+              </p>
+            )}
           </div>
           
           <div className="mb-6">
