@@ -387,23 +387,28 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
     }
     
     try {
+      setLoading(true);
+      setError('');
+      
       // Check if the user is registered by trying to get their info
       const userInfo = await contractServiceV2.getUserInfo(scannedData.address);
       
-      if (userInfo.success && userInfo.username) {
-        // User is registered, navigate to send page with prefilled address
-        setPrefilledSendData({ 
-          address: scannedData.address, 
-          username: userInfo.username 
-        });
-        setActivePage('send');
-      } else {
-        // User is not registered, just show regular send gas option
-        setError('This address is not registered. You can only send gas to unregistered users.');
-      }
+      // Navigate to send page with prefilled address regardless of registration status
+      setPrefilledSendData({ 
+        address: scannedData.address, 
+        username: userInfo.success && userInfo.username ? userInfo.username : null
+      });
+      setActivePage('send');
     } catch (err) {
-      console.error('Error checking user registration:', err);
-      setError('Failed to check user registration status');
+      console.error('Error checking user info:', err);
+      // Even if we can't get user info, still navigate to send page with just the address
+      setPrefilledSendData({ 
+        address: scannedData.address, 
+        username: null
+      });
+      setActivePage('send');
+    } finally {
+      setLoading(false);
     }
   };
 
