@@ -109,7 +109,10 @@
         <button onclick="toggleAccelerometer()">Toggle Accelerometer</button>
         <br><br>
         <label>Beer Density: <input type="range" id="beerDensity" min="1" max="10" value="4" oninput="updateDensity()"> <span id="beerDensityValue">4</span></label><br>
-        <label>Foam Density: <input type="range" id="foamDensity" min="1" max="8" value="3" oninput="updateDensity()"> <span id="foamDensityValue">3</span></label>
+        <label>Foam Density: <input type="range" id="foamDensity" min="1" max="8" value="3" oninput="updateDensity()"> <span id="foamDensityValue">3</span></label><br>
+        <label>Beer Volume: <input type="range" id="beerVolume" min="1" max="10" value="5" oninput="updateVolume()"> <span id="beerVolumeValue">5</span></label><br>
+        <label>Foam Volume: <input type="range" id="foamVolume" min="1" max="8" value="3" oninput="updateVolume()"> <span id="foamVolumeValue">3</span></label><br>
+        <label>Simulation Speed: <input type="range" id="simSpeed" min="0.1" max="3" step="0.1" value="1" oninput="updateSimSpeed()"> <span id="simSpeedValue">1.0x</span></label>
     </div>
 
     <canvas id="canvas" width="400" height="600"></canvas>
@@ -240,6 +243,7 @@
                 this.animationId = null;
                 this.particleCount = 0;
                 this.gravityReversed = false;
+                this.simulationSpeed = 1.0; // Default simulation speed multiplier
                 
                 this.init();
             }
@@ -512,17 +516,19 @@
                 console.log('fillGlassWithBeer called - creating grid of beer particles');
                 
                 const density = parseInt(document.getElementById('beerDensity').value);
+                const volume = parseInt(document.getElementById('beerVolume').value);
                 const particleSpacing = 0.8 - (density * 0.05); // Closer spacing for higher density
                 
                 // Glass dimensions (inside the walls)
                 const glassLeft = -3.3;
                 const glassRight = 3.3;
                 const glassBottom = 5.2;
-                const glassHeight = 7; // Fill halfway up (glass is about 15 units tall)
+                const maxGlassHeight = 12; // Maximum height we can fill
+                const glassHeight = (volume / 10) * maxGlassHeight; // Scale height based on volume (1-10)
                 
                 let particleCount = 0;
                 
-                // Create grid of particles
+                // Create grid of particles - height increases with volume
                 for (let y = glassBottom; y < glassBottom + glassHeight; y += particleSpacing) {
                     for (let x = glassLeft; x <= glassRight; x += particleSpacing) {
                         try {
@@ -568,17 +574,19 @@
                 console.log('addFoamLayer called - creating grid of foam particle groups');
                 
                 const density = parseInt(document.getElementById('foamDensity').value);
+                const volume = parseInt(document.getElementById('foamVolume').value);
                 const particleSpacing = 1.0 - (density * 0.08); // Closer spacing for higher density
                 
                 // Glass dimensions (inside the walls)
                 const glassLeft = -3.2;
                 const glassRight = 3.2;
                 const foamBottom = 12; // Start above the beer level
-                const foamHeight = 1.5; // Thin foam layer - reduced from 2
+                const maxFoamHeight = 4; // Maximum foam height
+                const foamHeight = (volume / 8) * maxFoamHeight; // Scale height based on volume (1-8)
                 
                 let particleCount = 0;
                 
-                // Create grid of foam particle groups (like beer but smaller)
+                // Create grid of foam particle groups - height increases with volume
                 for (let y = foamBottom; y < foamBottom + foamHeight; y += particleSpacing) {
                     for (let x = glassLeft; x <= glassRight; x += particleSpacing) {
                         try {
@@ -644,6 +652,11 @@
                     this.world.SetGravity(new this.b2Vec2(0, -10));
                 }
                 console.log('Accelerometer', this.accelerometerEnabled ? 'enabled' : 'disabled');
+            }
+
+            setSimulationSpeed(speed) {
+                this.simulationSpeed = parseFloat(speed);
+                console.log('Simulation speed set to:', this.simulationSpeed + 'x');
             }
 
             worldToCanvas(worldPos) {
@@ -890,15 +903,16 @@
             }
 
             animate() {
-                // Step physics simulation
+                // Step physics simulation with speed multiplier
                 try {
-                    this.world.Step(1/60, 8, 3);
+                    const timeStep = (1/60) * this.simulationSpeed;
+                    this.world.Step(timeStep, 8, 3);
                     
                     // Debug: Log particle count every few frames
                     this.frameCount = (this.frameCount || 0) + 1;
                     if (this.frameCount % 60 === 0) { // Every second
                         const totalCount = this.particleSystem.GetParticleCount();
-                        console.log(`Frame ${this.frameCount}: Total particles: ${totalCount}`);
+                        console.log(`Frame ${this.frameCount}: Total particles: ${totalCount}, Speed: ${this.simulationSpeed}x`);
                     }
                     
                 } catch (e) {
@@ -955,6 +969,19 @@
             const foamDensity = document.getElementById('foamDensity').value;
             document.getElementById('beerDensityValue').textContent = beerDensity;
             document.getElementById('foamDensityValue').textContent = foamDensity;
+        }
+
+        function updateVolume() {
+            const beerVolume = document.getElementById('beerVolume').value;
+            const foamVolume = document.getElementById('foamVolume').value;
+            document.getElementById('beerVolumeValue').textContent = beerVolume;
+            document.getElementById('foamVolumeValue').textContent = foamVolume;
+        }
+
+        function updateSimSpeed() {
+            const simSpeed = document.getElementById('simSpeed').value;
+            document.getElementById('simSpeedValue').textContent = simSpeed + 'x';
+            if (beerGlass) beerGlass.setSimulationSpeed(simSpeed);
         }
 
         // Initialize when page loads
