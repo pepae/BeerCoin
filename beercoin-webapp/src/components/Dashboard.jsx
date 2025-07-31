@@ -15,6 +15,7 @@ const Dashboard = () => {
   const {
     beerBalance,
     pendingRewards,
+    userInfo,
     claimRewards,
     refreshBalances
   } = useContractData();
@@ -134,6 +135,30 @@ const Dashboard = () => {
               </span>
             </div>
           </div>
+          
+          {/* Referral Information for Trusted Users */}
+          {isTrusted && userInfo && (
+            <>
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-muted-foreground">Referrals:</span>
+                  <span className="font-medium">{userInfo.referralCount || 0} users</span>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-muted-foreground">Issuance Multiplier:</span>
+                  <span className="font-medium text-primary">
+                    {((userInfo.referralCount || 0) * 0.1 + 1).toFixed(1)}x
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Base rate + {((userInfo.referralCount || 0) * 0.1).toFixed(1)}x bonus from referrals
+                </p>
+              </div>
+            </>
+          )}
           
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">

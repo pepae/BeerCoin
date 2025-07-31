@@ -361,23 +361,6 @@ const QRCodeScanner = ({ setActivePage }) => {
             Start Camera
           </button>
           
-          {/* Debug Camera Button */}
-          <button
-            className="beer-button-secondary w-full mb-4"
-            onClick={async () => {
-              console.log('🔍 Manual camera test...');
-              if (window.testCamera) {
-                const result = await window.testCamera();
-                setError(result ? 'Camera test successful!' : 'Camera test failed - check console for details');
-                setTimeout(() => setError(''), 3000);
-              } else {
-                setError('Debug utilities not loaded');
-              }
-            }}
-          >
-            Test Camera (Debug)
-          </button>
-          
           <div className="flex items-center justify-center my-4">
             <div className="flex-1 h-px bg-border"></div>
             <span className="px-4 text-muted-foreground text-sm">OR</span>
