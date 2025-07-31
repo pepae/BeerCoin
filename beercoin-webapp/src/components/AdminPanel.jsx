@@ -1,0 +1,549 @@
+import { useState, useEffect } from 'react';
+import { useWallet } from '../contexts/WalletContext';
+import contractServiceV2 from '../lib/contractServiceV2';
+
+const AdminPanel = () => {
+  const { wallet } = useWallet();
+  const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Contract state
+  const [distributionActive, setDistributionActive] = useState(false);
+  const [baseRewardRate, setBaseRewardRate] = useState('0');
+  const [referrerMultiplier, setReferrerMultiplier] = useState(0);
+  const [multiplierBase, setMultiplierBase] = useState(100);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalTrustedUsers, setTotalTrustedUsers] = useState(0);
+  const [allTrustedUsers, setAllTrustedUsers] = useState([]);
+
+  // Form states
+  const [trustUserAddress, setTrustUserAddress] = useState('');
+  const [trustUserUsername, setTrustUserUsername] = useState('');
+  const [removeTrustAddress, setRemoveTrustAddress] = useState('');
+  const [newRewardRate, setNewRewardRate] = useState('');
+  const [newReferrerMultiplier, setNewReferrerMultiplier] = useState('');
+  const [sendXdaiAddress, setSendXdaiAddress] = useState('');
+  const [sendXdaiAmount, setSendXdaiAmount] = useState('');
+  const [searchUsername, setSearchUsername] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+
+  // Check if current user is owner and load contract data
+  useEffect(() => {
+    if (!wallet) return;
+    
+    const checkOwnership = async () => {
+      setLoading(true);
+      try {
+        const ownerStatus = await contractServiceV2.isOwner(wallet.address);
+        setIsOwner(ownerStatus);
+        
+        if (ownerStatus) {
+          await loadContractData();
+        }
+      } catch (err) {
+        console.error('Error checking ownership:', err);
+        setError('Failed to verify admin status');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkOwnership();
+  }, [wallet]);
+
+  const loadContractData = async () => {
+    try {
+      const [
+        active,
+        rate,
+        multiplier,
+        base,
+        totalUsersCount,
+        trustedCount,
+        trustedUsers
+      ] = await Promise.all([
+        contractServiceV2.isDistributionActive(),
+        contractServiceV2.getBaseRewardRate(),
+        contractServiceV2.getReferrerMultiplier(),
+        contractServiceV2.getMultiplierBase(),
+        contractServiceV2.getTotalUsers(),
+        contractServiceV2.getTotalTrustedUsers(),
+        contractServiceV2.getAllTrustedUsers()
+      ]);
+
+      setDistributionActive(active);
+      setBaseRewardRate(rate);
+      setReferrerMultiplier(multiplier);
+      setMultiplierBase(base);
+      setTotalUsers(totalUsersCount);
+      setTotalTrustedUsers(trustedCount);
+      setAllTrustedUsers(trustedUsers);
+    } catch (err) {
+      console.error('Error loading contract data:', err);
+      setError('Failed to load contract data');
+    }
+  };
+
+  const showMessage = (message, isError = false) => {
+    if (isError) {
+      setError(message);
+      setSuccess('');
+    } else {
+      setSuccess(message);
+      setError('');
+    }
+    
+    setTimeout(() => {
+      setError('');
+      setSuccess('');
+    }, 5000);
+  };
+
+  const handleAddTrustedUser = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.addTrustedUser(trustUserAddress, trustUserUsername);
+      
+      if (result.success) {
+        showMessage(`Successfully added trusted user: ${trustUserUsername}`);
+        setTrustUserAddress('');
+        setTrustUserUsername('');
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to add trusted user', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveTrustedUser = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.removeTrustedUser(removeTrustAddress);
+      
+      if (result.success) {
+        showMessage('Successfully removed trusted user');
+        setRemoveTrustAddress('');
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to remove trusted user', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateRewardRate = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.updateRewardRate(newRewardRate);
+      
+      if (result.success) {
+        showMessage(`Successfully updated reward rate to ${newRewardRate} BEER/day`);
+        setNewRewardRate('');
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to update reward rate', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateReferrerMultiplier = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.updateReferrerMultiplier(newReferrerMultiplier);
+      
+      if (result.success) {
+        showMessage(`Successfully updated referrer multiplier to ${newReferrerMultiplier}`);
+        setNewReferrerMultiplier('');
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to update referrer multiplier', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleDistribution = async () => {
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.toggleDistribution();
+      
+      if (result.success) {
+        showMessage(`Distribution ${distributionActive ? 'disabled' : 'enabled'}`);
+        await loadContractData();
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to toggle distribution', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendXdai = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const result = await contractServiceV2.sendXDai(sendXdaiAddress, sendXdaiAmount);
+      
+      if (result.success) {
+        showMessage(`Successfully sent ${sendXdaiAmount} xDAI to ${sendXdaiAddress}`);
+        setSendXdaiAddress('');
+        setSendXdaiAmount('');
+      } else {
+        showMessage(result.error, true);
+      }
+    } catch (err) {
+      showMessage('Failed to send xDAI', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchUser = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const address = await contractServiceV2.getAddressByUsername(searchUsername);
+      
+      if (address) {
+        const userInfo = await contractServiceV2.getUserInfo(address);
+        setSearchResult({
+          address,
+          ...userInfo
+        });
+      } else {
+        setSearchResult(null);
+        showMessage('User not found', true);
+      }
+    } catch (err) {
+      showMessage('Failed to search user', true);
+      setSearchResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!wallet) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Panel</h1>
+          <p className="text-gray-600">Please connect your wallet to access the admin panel.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && !isOwner) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verifying admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isOwner) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">You are not authorized to access this admin panel.</p>
+          <p className="text-sm text-gray-500">Only the contract owner can access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">🍺 BeerCoin Admin Panel</h1>
+          <p className="text-gray-600">Contract administration and management</p>
+          
+          {error && (
+            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+              {success}
+            </div>
+          )}
+        </div>
+
+        {/* Contract Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Distribution Status</h3>
+            <div className="flex items-center">
+              <div className={`w-3 h-3 rounded-full mr-2 ${distributionActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className={distributionActive ? 'text-green-600' : 'text-red-600'}>
+                {distributionActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Base Reward Rate</h3>
+            <p className="text-xl font-bold text-orange-600">{parseFloat(baseRewardRate).toFixed(4)} BEER/day</p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Referrer Multiplier</h3>
+            <p className="text-xl font-bold text-blue-600">{referrerMultiplier}/100</p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Total Users</h3>
+            <p className="text-xl font-bold text-purple-600">{totalUsers} ({totalTrustedUsers} trusted)</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Management */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">👥 User Management</h2>
+            
+            {/* Search User */}
+            <form onSubmit={handleSearchUser} className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Search User</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={searchUsername}
+                  onChange={(e) => setSearchUsername(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Searching...' : 'Search User'}
+                </button>
+              </div>
+              
+              {searchResult && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <p className="font-semibold text-gray-900">User: {searchResult.username}</p>
+                  <p className="text-sm text-gray-600 font-mono break-all">Address: {searchResult.address}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className={`px-2 py-1 text-xs rounded ${searchResult.isTrusted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {searchResult.isTrusted ? 'Trusted' : 'Regular'}
+                    </span>
+                    <span className={`px-2 py-1 text-xs rounded ${searchResult.isActive ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>
+                      {searchResult.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">
+                      {searchResult.referralCount} referrals
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Total Earned: {parseFloat(searchResult.totalEarned).toFixed(4)} BEER
+                  </p>
+                </div>
+              )}
+            </form>
+            
+            {/* Add Trusted User */}
+            <form onSubmit={handleAddTrustedUser} className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Add Trusted User</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="User Address (0x...)"
+                  value={trustUserAddress}
+                  onChange={(e) => setTrustUserAddress(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={trustUserUsername}
+                  onChange={(e) => setTrustUserUsername(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Adding...' : 'Add Trusted User'}
+                </button>
+              </div>
+            </form>
+
+            {/* Remove Trusted User */}
+            <form onSubmit={handleRemoveTrustedUser} className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Remove Trusted User</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="User Address (0x...)"
+                  value={removeTrustAddress}
+                  onChange={(e) => setRemoveTrustAddress(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Removing...' : 'Remove Trusted User'}
+                </button>
+              </div>
+            </form>
+
+            {/* Send xDAI */}
+            <form onSubmit={handleSendXdai}>
+              <h3 className="font-semibold text-gray-700 mb-3">Send xDAI</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Recipient Address (0x...)"
+                  value={sendXdaiAddress}
+                  onChange={(e) => setSendXdaiAddress(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <input
+                  type="number"
+                  step="0.0001"
+                  placeholder="Amount (xDAI)"
+                  value={sendXdaiAmount}
+                  onChange={(e) => setSendXdaiAmount(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Sending...' : 'Send xDAI'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Contract Configuration */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">⚙️ Contract Configuration</h2>
+            
+            {/* Toggle Distribution */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Distribution Control</h3>
+              <button
+                onClick={handleToggleDistribution}
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-lg transition-colors disabled:opacity-50 ${
+                  distributionActive 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {loading ? 'Updating...' : distributionActive ? 'Disable Distribution' : 'Enable Distribution'}
+              </button>
+            </div>
+
+            {/* Update Reward Rate */}
+            <form onSubmit={handleUpdateRewardRate} className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Update Reward Rate</h3>
+              <div className="space-y-3">
+                <input
+                  type="number"
+                  step="0.0001"
+                  placeholder="New Rate (BEER per day)"
+                  value={newRewardRate}
+                  onChange={(e) => setNewRewardRate(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Updating...' : 'Update Reward Rate'}
+                </button>
+              </div>
+            </form>
+
+            {/* Update Referrer Multiplier */}
+            <form onSubmit={handleUpdateReferrerMultiplier}>
+              <h3 className="font-semibold text-gray-700 mb-3">Update Referrer Multiplier</h3>
+              <div className="space-y-3">
+                <input
+                  type="number"
+                  placeholder="New Multiplier (e.g., 10 for 10/100)"
+                  value={newReferrerMultiplier}
+                  onChange={(e) => setNewReferrerMultiplier(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-sm text-gray-600">
+                  Current: {referrerMultiplier}/{multiplierBase} = {((referrerMultiplier / multiplierBase) * 100).toFixed(1)}% per referral
+                </p>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Updating...' : 'Update Multiplier'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Trusted Users List */}
+        {allTrustedUsers.length > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">⭐ Trusted Users ({allTrustedUsers.length})</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allTrustedUsers.map((address, index) => (
+                <div key={index} className="p-3 border border-gray-200 rounded-lg">
+                  <p className="font-mono text-sm text-gray-600 break-all">{address}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminPanel;

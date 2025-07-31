@@ -345,6 +345,116 @@ class ContractServiceV2 {
       return 100;
     }
   }
+
+  // ADMIN FUNCTIONS - Only for contract owner
+
+  // Check if current wallet is the contract owner
+  async isOwner(address) {
+    try {
+      if (!this.distributorContract) return false;
+      const owner = await this.distributorContract.owner();
+      return owner.toLowerCase() === address.toLowerCase();
+    } catch (error) {
+      console.error('Error checking owner:', error);
+      return false;
+    }
+  }
+
+  // Add trusted user (admin only)
+  async addTrustedUser(userAddress, username) {
+    try {
+      if (!this.distributorContract) throw new Error('Contract not initialized');
+      
+      const checksummedAddress = ethers.getAddress(userAddress.toLowerCase());
+      const tx = await this.distributorContract.addTrustedUser(checksummedAddress, username);
+      await tx.wait();
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Error adding trusted user:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Remove trusted user (admin only)
+  async removeTrustedUser(userAddress) {
+    try {
+      if (!this.distributorContract) throw new Error('Contract not initialized');
+      
+      const checksummedAddress = ethers.getAddress(userAddress.toLowerCase());
+      const tx = await this.distributorContract.removeTrustedUser(checksummedAddress);
+      await tx.wait();
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Error removing trusted user:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Update reward rate (admin only)
+  async updateRewardRate(newRate) {
+    try {
+      if (!this.distributorContract) throw new Error('Contract not initialized');
+      
+      const rateWei = ethers.parseEther(newRate.toString());
+      const tx = await this.distributorContract.updateRewardRate(rateWei);
+      await tx.wait();
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Error updating reward rate:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Update referrer multiplier (admin only)
+  async updateReferrerMultiplier(newMultiplier) {
+    try {
+      if (!this.distributorContract) throw new Error('Contract not initialized');
+      
+      const tx = await this.distributorContract.updateReferrerMultiplier(newMultiplier);
+      await tx.wait();
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Error updating referrer multiplier:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Toggle distribution active/inactive (admin only)
+  async toggleDistribution() {
+    try {
+      if (!this.distributorContract) throw new Error('Contract not initialized');
+      
+      const tx = await this.distributorContract.toggleDistribution();
+      await tx.wait();
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Error toggling distribution:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get contract owner address
+  async getOwner() {
+    try {
+      if (!this.distributorContract) return null;
+      return await this.distributorContract.owner();
+    } catch (error) {
+      console.error('Error getting owner:', error);
+      return null;
+    }
+  }
+
+  // Get address by username (admin helper)
+  async getAddressByUsername(username) {
+    try {
+      if (!this.distributorContract) return null;
+      const address = await this.distributorContract.usernameToAddress(username);
+      return address === '0x0000000000000000000000000000000000000000' ? null : address;
+    } catch (error) {
+      console.error('Error getting address by username:', error);
+      return null;
+    }
+  }
 }
 
 // Create and export singleton instance
