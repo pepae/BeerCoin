@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Beer Glass - BeerCoin</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #2c1810, #4a2c1a);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 160px;
+        }
+
+        #canvas {
+            border: 1px solid #8b4513;
+            border-radius: 5px;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="110" height="150"></canvas>
+
+    <script>
+        // Load LiquidFun dynamically with better error handling
+        function loadLiquidFun() {
+            return new Promise((resolve, reject) => {
+                // Try multiple paths
+                const paths = [
+                    '/liquidfun_v1.1.0.min.js',
+                    './liquidfun_v1.1.0.min.js',
+                    'liquidfun_v1.1.0.min.js'
+                ];
+                
+                let currentPath = 0;
+                
+                function tryPath() {
+                    if (currentPath >= paths.length) {
+                        reject(new Error('All paths failed'));
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = paths[currentPath];
+                    
+                    script.onload = () => {
+                        console.log(`LiquidFun loaded from: ${paths[currentPath]}`);
+                        resolve();
+                    };
+                    
+                    script.onerror = () => {
+                        console.warn(`Failed to load from: ${paths[currentPath]}`);
+                        currentPath++;
+                        document.head.removeChild(script);
+                        setTimeout(tryPath, 100);
+                    };
+                    
+                    document.head.appendChild(script);
+                }
+                
+                tryPath();
+            });
+        }
+
+        class MiniBeerGlass {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Try to get Box2D objects from different possible locations
+                this.b2World = window.b2World || Box2D?.b2World || Box2D?.Dynamics?.b2World;
+                this.b2Vec2 = window.b2Vec2 || Box2D?.b2Vec2 || Box2D?.Common?.Math?.b2Vec2;
+                this.b2BodyDef = window.b2BodyDef || Box2D?.b2BodyDef || Box2D?.Dynamics?.b2BodyDef;
+                this.b2_staticBody = window.b2_staticBody || Box2D?.b2_staticBody || Box2D?.Dynamics?.b2Body?.b2_staticBody || Box2D?.b2BodyType?.b2_staticBody || 0;
+                this.b2PolygonShape = window.b2PolygonShape || Box2D?.b2PolygonShape || Box2D?.Collision?.Shapes?.b2PolygonShape;
+                this.b2CircleShape = window.b2CircleShape || Box2D?.b2CircleShape || Box2D?.Collision?.Shapes?.b2CircleShape;
+                this.b2ParticleSystemDef = window.b2ParticleSystemDef || Box2D?.b2ParticleSystemDef;
+                this.b2ParticleGroupDef = window.b2ParticleGroupDef || Box2D?.b2ParticleGroupDef;
+                this.b2ParticleDef = window.b2ParticleDef || Box2D?.b2ParticleDef;
+                this.b2ParticleColor = window.b2ParticleColor || Box2D?.b2ParticleColor;
+                this.b2_waterParticle = window.b2_waterParticle || Box2D?.b2_waterParticle || Box2D?.b2ParticleFlag?.b2_waterParticle || 1;
+                this.b2_viscousParticle = window.b2_viscousParticle || Box2D?.b2_viscousParticle || Box2D?.b2ParticleFlag?.b2_viscousParticle || 64;
+                this.b2Transform = window.b2Transform || Box2D?.b2Transform;
+                this.b2Rot = window.b2Rot || Box2D?.b2Rot;
+                
+                if (!this.b2World) {
+                    console.error('Could not find b2World');
+                    return;
+                }
+                
+                // Physics world setup
+                this.world = null;
+                this.glassBody = null;
+                
+                // Accelerometer data
+                this.gravity = { x: 0, y: -10 };
+                this.accelerometerSupported = false;
+                this.accelerometerEnabled = true;
+                
+                // Animation
+                this.animationId = null;
+                this.simulationSpeed = 1.0;
+                
+                // Compact glass dimensions
+                this.glassWidth = 2.5;
+                this.glassHeight = 6;
+                this.glassX = 0;
+                this.glassY = 1;
+                
+                this.init();
+            }
+
+            // Helper function to set polygon shape vertices
+            setPolygonVertices(shape, vertices) {
+                if (typeof shape.Set === 'function') {
+                    shape.Set(vertices, vertices.length);
+                } else if (typeof shape.SetAsArray === 'function') {
+                    shape.SetAsArray(vertices);
+                } else if (typeof shape.SetVertices === 'function') {
+                    shape.SetVertices(vertices);
+                } else {
+                    shape.vertices = vertices;
+                }
+            }
+
+            init() {
+                this.setupPhysics();
+                this.createGlass();
+                this.setupAccelerometer();
+                this.animate();
+                
+                // Auto-fill with beer after a short delay
+                setTimeout(() => {
+                    this.fillGlassWithBeer();
+                    setTimeout(() => this.addFoamLayer(), 2000);
+                    setTimeout(() => this.addFoamLayer(), 2200);
+                }, 1000);
+            }
+
+            setupPhysics() {
+                const gravity = new this.b2Vec2(0, -10);
+                this.world = new this.b2World(gravity, true);
+                
+                const particleSystemDef = new this.b2ParticleSystemDef();
+                particleSystemDef.set_radius(0.08); // Smaller particles for mini view
+                this.particleSystem = this.world.CreateParticleSystem(particleSystemDef);
+                this.particleSystem.SetMaxParticleCount(1000); // Much smaller limit
+            }
+
+            createGlass() {
+                const bodyDef = new this.b2BodyDef();
+                bodyDef.type = this.b2_staticBody || 0;
+                
+                if (bodyDef.position && typeof bodyDef.position.Set === 'function') {
+                    bodyDef.position.Set(0, 0);
+                } else if (bodyDef.position) {
+                    bodyDef.position.x = 0;
+                    bodyDef.position.y = 0;
+                } else {
+                    bodyDef.position = new this.b2Vec2(0, 0);
+                }
+                
+                this.glassBody = this.world.CreateBody(bodyDef);
+
+                // Create compact glass walls
+                this.createSimpleWall(0, 1.5, 2.5, 0.2); // Bottom
+                this.createSimpleWall(-1.1, 4, 0.2, 5); // Left wall
+                this.createSimpleWall(1.1, 4, 0.2, 5); // Right wall
+            }
+
+            createSimpleWall(centerX, centerY, width, height) {
+                const shape = new this.b2PolygonShape();
+                if (typeof shape.SetAsBox === 'function') {
+                    shape.SetAsBox(width / 2, height / 2, new this.b2Vec2(centerX, centerY), 0);
+                } else {
+                    const vertices = [
+                        new this.b2Vec2(centerX - width/2, centerY - height/2),
+                        new this.b2Vec2(centerX + width/2, centerY - height/2),
+                        new this.b2Vec2(centerX + width/2, centerY + height/2),
+                        new this.b2Vec2(centerX - width/2, centerY + height/2)
+                    ];
+                    this.setPolygonVertices(shape, vertices);
+                }
+                
+                this.glassBody.CreateFixture(shape, 0);
+            }
+
+            setupAccelerometer() {
+                if (window.DeviceMotionEvent) {
+                    window.addEventListener('devicemotion', (event) => {
+                        if (event.accelerationIncludingGravity && this.accelerometerEnabled) {
+                            const rawX = event.accelerationIncludingGravity.x || 0;
+                            const rawY = event.accelerationIncludingGravity.y || 0;
+                            
+                            const deadzone = 1.0;
+                            const filteredX = Math.abs(rawX) > deadzone ? rawX : 0;
+                            const filteredY = Math.abs(rawY) > deadzone ? rawY : 0;
+                            
+                            const gravityScale = 0.3; // Reduced for mini view
+                            const baseGravity = -10;
+                            
+                            const gravityX = -filteredX * gravityScale;
+                            let gravityY = baseGravity;
+                            if (Math.abs(filteredY) > 2) {
+                                gravityY = filteredY > 0 ? baseGravity : baseGravity * 0.3;
+                            }
+                            
+                            this.world.SetGravity(new this.b2Vec2(gravityX, gravityY));
+                            this.accelerometerSupported = true;
+                        }
+                    });
+                } else {
+                    // Mouse movement fallback
+                    this.canvas.addEventListener('mousemove', (event) => {
+                        const rect = this.canvas.getBoundingClientRect();
+                        const x = (event.clientX - rect.left - rect.width / 2) / rect.width * 8;
+                        const y = (event.clientY - rect.top - rect.height / 2) / rect.height * 8;
+                        
+                        this.gravity.x = x;
+                        this.gravity.y = Math.abs(y) + 5;
+                        this.world.SetGravity(new this.b2Vec2(this.gravity.x, this.gravity.y));
+                    });
+                }
+            }
+
+            fillGlassWithBeer() {
+                const particleSpacing = 0.2;
+                const glassLeft = -0.9;
+                const glassRight = 0.9;
+                const glassBottom = 1.7;
+                const glassHeight = 2.5;
+                
+                for (let y = glassBottom; y < glassBottom + glassHeight; y += particleSpacing) {
+                    for (let x = glassLeft; x <= glassRight; x += particleSpacing) {
+                        try {
+                            const color = new this.b2ParticleColor(255, 193, 7, 255);
+                            const pgd = new this.b2ParticleGroupDef();
+                            const shape = new this.b2CircleShape();
+                            
+                            const radius = 0.06 + Math.random() * 0.02;
+                            shape.set_m_radius(radius);
+                            shape.set_m_p(new this.b2Vec2(
+                                x + (Math.random() - 0.5) * 0.05,
+                                y + (Math.random() - 0.5) * 0.05
+                            ));
+                            
+                            pgd.set_shape(shape);
+                            pgd.set_color(color);
+                            pgd.set_flags(0);
+                            
+                            this.particleSystem.CreateParticleGroup(pgd);
+                        } catch (e) {
+                            console.error('Failed to create beer particle at', x, y, ':', e);
+                        }
+                    }
+                }
+            }
+
+            addFoamLayer() {
+                const particleSpacing = 0.15;
+                const glassLeft = -0.8;
+                const glassRight = 0.8;
+                const foamBottom = 4.2;
+                const foamHeight = 0.6;
+                
+                for (let y = foamBottom; y < foamBottom + foamHeight; y += particleSpacing) {
+                    for (let x = glassLeft; x <= glassRight; x += particleSpacing) {
+                        try {
+                            const color = new this.b2ParticleColor(255, 255, 255, 180 + Math.random() * 40);
+                            const pgd = new this.b2ParticleGroupDef();
+                            const shape = new this.b2CircleShape();
+                            
+                            const radius = 0.04 + Math.random() * 0.02;
+                            shape.set_m_radius(radius);
+                            shape.set_m_p(new this.b2Vec2(
+                                x + (Math.random() - 0.5) * 0.05,
+                                y + (Math.random() - 0.5) * 0.05
+                            ));
+                            
+                            pgd.set_shape(shape);
+                            pgd.set_color(color);
+                            pgd.set_flags(0);
+                            
+                            this.particleSystem.CreateParticleGroup(pgd);
+                        } catch (e) {
+                            console.error('Failed to create foam particle at', x, y, ':', e);
+                        }
+                    }
+                }
+            }
+
+            worldToCanvas(worldPos) {
+                return {
+                    x: (worldPos.x + 4) * (this.canvas.width / 8),
+                    y: this.canvas.height - (worldPos.y + 1) * (this.canvas.height / 8)
+                };
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawAllParticles();
+            }
+
+            drawAllParticles() {
+                const particleCount = this.particleSystem.GetParticleCount();
+                if (particleCount === 0) return;
+
+                if (typeof Module === 'undefined') {
+                    this.drawFallbackParticles();
+                    return;
+                }
+                
+                try {
+                    const posOffset = this.particleSystem.GetPositionBuffer();
+                    
+                    if (posOffset && typeof posOffset === 'object' && posOffset.e !== undefined) {
+                        if (!Module.HEAPU8 || !Module.HEAPU8.buffer) {
+                            this.drawFallbackParticles();
+                            return;
+                        }
+                        
+                        const positions = new Float32Array(Module.HEAPU8.buffer, posOffset.e, particleCount * 2);
+                        const colorOffset = this.particleSystem.GetColorBuffer();
+                        let colors = null;
+                        
+                        if (colorOffset && colorOffset.e !== undefined) {
+                            colors = new Uint8Array(Module.HEAPU8.buffer, colorOffset.e, particleCount * 4);
+                        }
+                        
+                        for (let i = 0; i < particleCount; i++) {
+                            const physX = positions[i * 2];
+                            const physY = positions[i * 2 + 1];
+                            
+                            if (isNaN(physX) || isNaN(physY)) continue;
+                            
+                            const canvasPos = this.worldToCanvas({ x: physX, y: physY });
+                            
+                            if (canvasPos.x >= -10 && canvasPos.x <= this.canvas.width + 10 &&
+                                canvasPos.y >= -10 && canvasPos.y <= this.canvas.height + 10) {
+                                
+                                if (colors) {
+                                    const r = colors[i * 4];
+                                    const g = colors[i * 4 + 1];
+                                    const b = colors[i * 4 + 2];
+                                    const a = colors[i * 4 + 3];
+                                    this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
+                                } else {
+                                    if (physY > 4) {
+                                        this.ctx.fillStyle = `rgba(255, 255, 255, 0.9)`;
+                                    } else {
+                                        this.ctx.fillStyle = `rgba(255, 193, 7, 0.95)`;
+                                    }
+                                }
+                                
+                                this.ctx.beginPath();
+                                this.ctx.arc(canvasPos.x, canvasPos.y, physY > 4 ? 1 : 2, 0, Math.PI * 2);
+                                this.ctx.fill();
+                            }
+                        }
+                    } else {
+                        this.drawFallbackParticles();
+                    }
+                } catch (error) {
+                    this.drawFallbackParticles();
+                }
+            }
+
+            drawFallbackParticles() {
+                // Draw static beer-colored particles as fallback
+                this.ctx.fillStyle = '#FFC107';
+                for (let i = 0; i < 20; i++) {
+                    const x = 20 + (i % 7) * 12;
+                    const y = 120 - Math.floor(i / 7) * 8;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                
+                // Draw static foam particles
+                this.ctx.fillStyle = '#FFFFFF';
+                for (let i = 0; i < 8; i++) {
+                    const x = 25 + (i % 6) * 10;
+                    const y = 30 + Math.floor(i / 6) * 6;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 1, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            animate() {
+                try {
+                    const timeStep = (1/60) * this.simulationSpeed;
+                    this.world.Step(timeStep, 8, 3);
+                } catch (e) {
+                    // Physics failed, continue with visual only
+                }
+
+                this.render();
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+
+            destroy() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+        }
+
+        // Global variable
+        let miniBeerGlass;
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            try {
+                await loadLiquidFun();
+                
+                setTimeout(() => {
+                    if (typeof b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
+                        miniBeerGlass = new MiniBeerGlass();
+                    } else if (typeof Box2D !== 'undefined') {
+                        // Map Box2D objects to window
+                        window.b2World = Box2D.b2World || Box2D.Dynamics?.b2World;
+                        window.b2Vec2 = Box2D.b2Vec2 || Box2D.Common?.Math?.b2Vec2;
+                        window.b2BodyDef = Box2D.b2BodyDef || Box2D.Dynamics?.b2BodyDef;
+                        window.b2_staticBody = Box2D.b2_staticBody || Box2D.Dynamics?.b2Body?.b2_staticBody || Box2D.b2BodyType?.b2_staticBody || 0;
+                        window.b2PolygonShape = Box2D.b2PolygonShape || Box2D.Collision?.Shapes?.b2PolygonShape;
+                        window.b2CircleShape = Box2D.b2CircleShape || Box2D.Collision?.Shapes?.b2CircleShape;
+                        window.b2ParticleSystemDef = Box2D.b2ParticleSystemDef;
+                        window.b2ParticleGroupDef = Box2D.b2ParticleGroupDef;
+                        window.b2ParticleDef = Box2D.b2ParticleDef;
+                        window.b2ParticleColor = Box2D.b2ParticleColor;
+                        window.b2_waterParticle = Box2D.b2_waterParticle || Box2D.b2ParticleFlag?.b2_waterParticle || 1;
+                        window.b2_viscousParticle = Box2D.b2_viscousParticle || Box2D.b2ParticleFlag?.b2_viscousParticle || 64;
+                        window.b2Transform = Box2D.b2Transform || Box2D.Common?.Math?.b2Transform;
+                        window.b2Rot = Box2D.b2Rot || Box2D.Common?.Math?.b2Rot;
+                        
+                        if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
+                            miniBeerGlass = new MiniBeerGlass();
+                        } else {
+                            // Create fallback visual-only version
+                            const canvas = document.getElementById('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            function drawFallback() {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                
+                                // Draw beer
+                                ctx.fillStyle = '#FFC107';
+                                for (let i = 0; i < 20; i++) {
+                                    const x = 20 + (i % 7) * 12;
+                                    const y = 120 - Math.floor(i / 7) * 8;
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 2, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                                
+                                // Draw foam
+                                ctx.fillStyle = '#FFFFFF';
+                                for (let i = 0; i < 8; i++) {
+                                    const x = 25 + (i % 6) * 10;
+                                    const y = 30 + Math.floor(i / 6) * 6;
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 1, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                                
+                                requestAnimationFrame(drawFallback);
+                            }
+                            
+                            drawFallback();
+                        }
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Failed to load LiquidFun, using fallback:', error);
+                // Fallback implementation
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                function drawFallback() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw static beer glass visual
+                    ctx.fillStyle = '#FFC107';
+                    ctx.fillRect(20, 80, 70, 60);
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(25, 35, 60, 20);
+                    
+                    requestAnimationFrame(drawFallback);
+                }
+                
+                drawFallback();
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (miniBeerGlass) {
+                miniBeerGlass.destroy();
+            }
+        });
+    </script>
+</body>
+</html>
