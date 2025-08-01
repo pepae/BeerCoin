@@ -11,7 +11,7 @@ const Navigation = ({ activePage, setActivePage }) => {
 
   const handleNavClick = (page) => {
     // If user is not registered, they can only access the register page
-    if (!isRegistered && page !== 'register' && page !== 'wallet') {
+    if (!isRegistered && page !== 'register') {
       setShowTooltip(true);
       setTimeout(() => setShowTooltip(false), 3000);
       return;
@@ -99,21 +99,6 @@ const Navigation = ({ activePage, setActivePage }) => {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m22 2-7 20-4-9-9-4Z"></path>
             <path d="M22 2 11 13"></path>
-          </svg>
-        </button>
-        
-        <button
-          className={`p-3 rounded-full ${
-            activePage === 'wallet'
-              ? 'bg-primary text-primary-foreground'
-              : 'text-foreground hover:bg-muted'
-          }`}
-          onClick={() => handleNavClick('wallet')}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
           </svg>
         </button>
       </div>

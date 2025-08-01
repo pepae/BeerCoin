@@ -155,37 +155,37 @@ const Leaderboard = () => {
                   isCurrentUser ? 'ring-2 ring-primary ring-opacity-50 bg-primary/5' : ''
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
                     {/* Rank Badge */}
-                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 font-bold ${getRankBadgeStyle(rank)}`}>
-                      <span className="text-lg">
-                        {rank <= 3 ? getRankIcon(rank).split('').slice(0, 2).join('') : `#${rank}`}
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-bold text-sm ${getRankBadgeStyle(rank)} flex-shrink-0`}>
+                      <span>
+                        {rank <= 3 ? getRankIcon(rank).split('').slice(0, 2).join('') : `${rank}`}
                       </span>
                     </div>
                     
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                      <div className="flex items-center gap-1 mb-1">
+                        <h3 className="font-semibold text-gray-900 truncate text-sm">
                           {user.username}
                           {isCurrentUser && (
-                            <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                            <span className="ml-1 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
                               You
                             </span>
                           )}
                         </h3>
                         {user.isTrusted && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 font-medium flex-shrink-0">
-                            ⭐ Trusted
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800 font-medium flex-shrink-0">
+                            ⭐
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="font-mono">{formatAddress(user.address)}</span>
+                      <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                        <span className="font-mono truncate">{formatAddress(user.address)}</span>
                         {user.referralCount > 0 && (
                           <span className="flex items-center">
-                            👥 {user.referralCount} referrals
+                            👥 {user.referralCount}
                           </span>
                         )}
                       </div>
@@ -193,9 +193,9 @@ const Leaderboard = () => {
                   </div>
                   
                   {/* BEER Balance */}
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-primary">
-                      {user.beerBalance.toFixed(2)}
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-lg font-bold text-primary">
+                      {user.beerBalance.toFixed(0)}
                     </div>
                     <div className="text-xs text-muted-foreground">BEER</div>
                   </div>
@@ -210,25 +210,25 @@ const Leaderboard = () => {
       {users.length > 0 && (
         <div className="mt-8 beer-card bg-muted/50">
           <h3 className="font-semibold mb-4">📊 Summary</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-blue-600">{users.length}</div>
+              <div className="text-xl font-bold text-blue-600">{users.length}</div>
               <div className="text-xs text-muted-foreground">Total Users</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-xl font-bold text-green-600">
                 {users.filter(u => u.isTrusted).length}
               </div>
               <div className="text-xs text-muted-foreground">Trusted Users</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-xl font-bold text-purple-600">
                 {users.reduce((sum, u) => sum + (u.referralCount || 0), 0)}
               </div>
               <div className="text-xs text-muted-foreground">Total Referrals</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-xl font-bold text-orange-600">
                 {users.reduce((sum, u) => sum + u.beerBalance, 0).toFixed(0)}
               </div>
               <div className="text-xs text-muted-foreground">Total BEER</div>
