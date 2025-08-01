@@ -83,20 +83,14 @@ const Dashboard = () => {
       {/* Balance Cards */}
       <div className="grid grid-cols-1 gap-4 mb-6">
         {/* BEER Balance with Interactive Glass */}
-        <div className="beer-card">
-          <div className="flex justify-between items-start gap-4">
+        <div className="beer-card-dark">
+          <div className="flex justify-between items-start gap-2">
             {/* Balance Info */}
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-2">
+            <div className="flex-1 min-w-0">
+              <div className="mb-2">
                 <h3 className="text-lg font-medium">BEER Balance</h3>
-                <button 
-                  onClick={handleRefresh}
-                  className="p-2 text-primary hover:text-primary/80"
-                >
-                  🔄
-                </button>
               </div>
-              <p className="beer-balance mb-1">{parseFloat(beerBalance).toFixed(4)} BEER</p>
+              <p className="beer-balance mb-1">{parseFloat(beerBalance).toFixed(2)} BEER</p>
               <p className="text-sm text-muted-foreground">≈ {parseFloat(beerBalance).toFixed(2)} BEER</p>
               <p className="text-xs text-muted-foreground mt-2">🍺 Tilt your phone to move the beer around!</p>
             </div>
@@ -111,7 +105,7 @@ const Dashboard = () => {
                 frameBorder="0"
                 className="rounded-lg border-0"
                 title="Interactive Beer Glass"
-                style={{ background: 'rgba(0, 0, 0, 0.15)' }}
+                style={{ background: 'rgba(0, 0, 0, 0.1)' }}
               />
             </div>
           </div>
