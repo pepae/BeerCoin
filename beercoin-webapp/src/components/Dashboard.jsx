@@ -37,27 +37,10 @@ const Dashboard = () => {
   const canvasRef = useRef(null);
   const beerGlassRef = useRef(null);
 
-  // EXACT COPY of beer.html - Load LiquidFun dynamically with proper runtime initialization
+  // EXACT COPY of beer.html - Load LiquidFun dynamically (REVERTED to working pattern)
   function loadLiquidFun() {
     return new Promise((resolve, reject) => {
-      // Set up Module configuration BEFORE loading the script (Emscripten best practice)
-      if (!window.Module) {
-        window.Module = {};
-      }
-      
-      // Set up the onRuntimeInitialized callback - this is the proper way to wait for WebAssembly
-      window.Module.onRuntimeInitialized = () => {
-        console.log('✅ WebAssembly runtime is fully initialized and ready');
-        resolve();
-      };
-      
-      // Also handle any initialization errors
-      window.Module.onAbort = (what) => {
-        console.error('❌ WebAssembly runtime aborted:', what);
-        reject(new Error('WebAssembly runtime aborted: ' + what));
-      };
-      
-      // Try multiple paths for the script
+      // Try multiple paths (EXACT COPY from beer.html)
       const paths = [
         '/liquidfun_v1.1.0.min.js',
         './liquidfun_v1.1.0.min.js',
@@ -68,7 +51,7 @@ const Dashboard = () => {
       
       function tryPath() {
         if (currentPath >= paths.length) {
-          reject(new Error('All LiquidFun script paths failed'));
+          reject(new Error('All paths failed'));
           return;
         }
         
@@ -76,12 +59,12 @@ const Dashboard = () => {
         script.src = paths[currentPath];
         
         script.onload = () => {
-          console.log(`LiquidFun script loaded from: ${paths[currentPath]}`);
-          // Don't resolve here - wait for onRuntimeInitialized callback
+          console.log(`LiquidFun loaded from: ${paths[currentPath]}`);
+          resolve();
         };
         
         script.onerror = () => {
-          console.warn(`Failed to load LiquidFun script from: ${paths[currentPath]}`);
+          console.warn(`Failed to load from: ${paths[currentPath]}`);
           currentPath++;
           document.head.removeChild(script);
           setTimeout(tryPath, 100);
@@ -656,102 +639,102 @@ const Dashboard = () => {
     }
   }
 
-  // Initialize beer glass physics simulation - Using proper Emscripten onRuntimeInitialized pattern
+  // Initialize beer glass physics simulation - EXACT COPY from beer.html initialization pattern
   useEffect(() => {
     if (!canvasRef.current) return;
     
-    // Initialize when component mounts using proper WebAssembly runtime initialization
+    // Initialize when component mounts (EXACT COPY from beer.html)
     const initializeSimulation = async () => {
-      console.log('Dashboard loaded, attempting to load LiquidFun with proper runtime initialization...');
+      console.log('Dashboard loaded, attempting to load LiquidFun...');
       
       try {
-        // Load LiquidFun script and wait for WebAssembly runtime to be ready
+        // Try to load LiquidFun
         await loadLiquidFun();
         
-        // At this point, onRuntimeInitialized has been called and WebAssembly is ready
-        console.log('🎉 LiquidFun WebAssembly runtime is ready, initializing Box2D objects...');
-        
-        // Check what's available in the global scope
-        console.log('Checking available objects:');
-        console.log('b2World:', typeof window.b2World);
-        console.log('Box2D:', typeof window.Box2D);
-        
-        const box2dObjects = Object.keys(window).filter(key => key.startsWith('b2'));
-        console.log('Available b2 objects:', box2dObjects);
-        
-        if (typeof window.b2World !== 'undefined') {
-          console.log('✅ Direct b2World found, initializing BeerGlass...');
-          beerGlassRef.current = new BeerGlass();
+        // Wait a bit more for the library to fully initialize (EXACT COPY from beer.html)
+        setTimeout(() => {
+          console.log('Checking available objects:');
+          console.log('b2World:', typeof window.b2World);
+          console.log('window.b2World:', typeof window.b2World);
+          console.log('Box2D:', typeof window.Box2D);
+          console.log('window.Box2D:', typeof window.Box2D);
           
-          // Auto-deploy beer and foam
-          setTimeout(() => {
-            if (beerGlassRef.current) {
-              console.log('Auto-deploying beer and foam...');
-              beerGlassRef.current.fillGlassWithBeer();
-              setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
-              setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
-            }
-          }, 1000);
+          // Check what's actually available in the global scope
+          const box2dObjects = Object.keys(window).filter(key => key.startsWith('b2'));
+          console.log('Available b2 objects:', box2dObjects);
           
-        } else if (typeof window.Box2D !== 'undefined') {
-          console.log('✅ Box2D module found, mapping objects to window...');
-          
-          // Map all necessary Box2D objects to window (EXACT COPY from beer.html)
-          window.b2World = window.Box2D.b2World || window.Box2D.Dynamics?.b2World;
-          window.b2Vec2 = window.Box2D.b2Vec2 || window.Box2D.Common?.Math?.b2Vec2;
-          window.b2BodyDef = window.Box2D.b2BodyDef || window.Box2D.Dynamics?.b2BodyDef;
-          window.b2_staticBody = window.Box2D.b2_staticBody || window.Box2D.Dynamics?.b2Body?.b2_staticBody || window.Box2D.b2BodyType?.b2_staticBody || 0;
-          window.b2PolygonShape = window.Box2D.b2PolygonShape || window.Box2D.Collision?.Shapes?.b2PolygonShape;
-          window.b2CircleShape = window.Box2D.b2CircleShape || window.Box2D.Collision?.Shapes?.b2CircleShape;
-          window.b2ParticleSystemDef = window.Box2D.b2ParticleSystemDef;
-          window.b2ParticleGroupDef = window.Box2D.b2ParticleGroupDef;
-          window.b2ParticleDef = window.Box2D.b2ParticleDef;
-          window.b2ParticleColor = window.Box2D.b2ParticleColor;
-          window.b2_waterParticle = window.Box2D.b2_waterParticle || window.Box2D.b2ParticleFlag?.b2_waterParticle || 1;
-          window.b2_viscousParticle = window.Box2D.b2_viscousParticle || window.Box2D.b2ParticleFlag?.b2_viscousParticle || 64;
-          window.b2Transform = window.Box2D.b2Transform || window.Box2D.Common?.Math?.b2Transform;
-          window.b2Rot = window.Box2D.b2Rot || window.Box2D.Common?.Math?.b2Rot;
-          
-          console.log('Mapped Box2D objects to window:', {
-            b2World: !!window.b2World,
-            b2Vec2: !!window.b2Vec2,
-            b2BodyDef: !!window.b2BodyDef,
-            b2PolygonShape: !!window.b2PolygonShape,
-            b2CircleShape: !!window.b2CircleShape,
-            b2ParticleSystemDef: !!window.b2ParticleSystemDef
-          });
-          
-          if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
-            console.log('✅ All required Box2D objects mapped successfully, creating BeerGlass...');
-            
-            // Create BeerGlass immediately - runtime is already ready
+          if (typeof window.b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
+            console.log('LiquidFun initialized successfully!');
             beerGlassRef.current = new BeerGlass();
             
-            // Auto-deploy beer and foam
+            // Auto-deploy beer and foam on startup
             setTimeout(() => {
               if (beerGlassRef.current) {
                 console.log('Auto-deploying beer and foam...');
                 beerGlassRef.current.fillGlassWithBeer();
+                // Shorter delays for compact display
                 setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
                 setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
               }
             }, 1000);
-          } else {
-            console.error('❌ Could not initialize all required Box2D objects');
-            console.log('Missing objects:', {
-              b2World: !window.b2World,
-              b2Vec2: !window.b2Vec2,
-              b2PolygonShape: !window.b2PolygonShape
+          } else if (typeof window.Box2D !== 'undefined') {
+            console.log('Box2D available, trying alternative initialization...');
+            // Try to use Box2D module if b2World is not directly available (EXACT COPY from beer.html)
+            // Map all necessary Box2D objects to window
+            window.b2World = window.Box2D.b2World || window.Box2D.Dynamics?.b2World;
+            window.b2Vec2 = window.Box2D.b2Vec2 || window.Box2D.Common?.Math?.b2Vec2;
+            window.b2BodyDef = window.Box2D.b2BodyDef || window.Box2D.Dynamics?.b2BodyDef;
+            window.b2_staticBody = window.Box2D.b2_staticBody || window.Box2D.Dynamics?.b2Body?.b2_staticBody || window.Box2D.b2BodyType?.b2_staticBody || 0;
+            window.b2PolygonShape = window.Box2D.b2PolygonShape || window.Box2D.Collision?.Shapes?.b2PolygonShape;
+            window.b2CircleShape = window.Box2D.b2CircleShape || window.Box2D.Collision?.Shapes?.b2CircleShape;
+            window.b2ParticleSystemDef = window.Box2D.b2ParticleSystemDef;
+            window.b2ParticleGroupDef = window.Box2D.b2ParticleGroupDef;
+            window.b2ParticleDef = window.Box2D.b2ParticleDef;
+            window.b2ParticleColor = window.Box2D.b2ParticleColor;
+            window.b2_waterParticle = window.Box2D.b2_waterParticle || window.Box2D.b2ParticleFlag?.b2_waterParticle || 1;
+            window.b2_viscousParticle = window.Box2D.b2_viscousParticle || window.Box2D.b2ParticleFlag?.b2_viscousParticle || 64;
+            window.b2Transform = window.Box2D.b2Transform || window.Box2D.Common?.Math?.b2Transform;
+            window.b2Rot = window.Box2D.b2Rot || window.Box2D.Common?.Math?.b2Rot;
+            
+            console.log('Mapped Box2D objects to window:', {
+              b2World: !!window.b2World,
+              b2Vec2: !!window.b2Vec2,
+              b2BodyDef: !!window.b2BodyDef,
+              b2PolygonShape: !!window.b2PolygonShape,
+              b2CircleShape: !!window.b2CircleShape,
+              b2ParticleSystemDef: !!window.b2ParticleSystemDef
             });
+            
+            if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
+              console.log('All required Box2D objects mapped successfully, creating BeerGlass...');
+              beerGlassRef.current = new BeerGlass();
+              
+              // Auto-deploy beer and foam on startup
+              setTimeout(() => {
+                if (beerGlassRef.current) {
+                  console.log('Auto-deploying beer and foam...');
+                  beerGlassRef.current.fillGlassWithBeer();
+                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
+                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                }
+              }, 1000);
+            } else {
+              console.error('Could not initialize all required Box2D objects');
+              console.log('Missing objects:', {
+                b2World: !window.b2World,
+                b2Vec2: !window.b2Vec2,
+                b2PolygonShape: !window.b2PolygonShape
+              });
+            }
+          } else {
+            console.error('LiquidFun loaded but b2World not available');
+            console.log('Available global objects:', Object.keys(window).slice(0, 20));
           }
-        } else {
-          console.error('❌ LiquidFun loaded but no Box2D objects found');
-          console.log('Available global objects:', Object.keys(window).slice(0, 20));
-        }
+        }, 500); // EXACT COPY from beer.html - 500ms timeout
         
       } catch (error) {
-        console.error('❌ Failed to load LiquidFun:', error);
-        console.log('🚫 Beer glass simulation disabled - LiquidFun not available');
+        console.error('Failed to load LiquidFun:', error);
+        console.log('Beer glass simulation disabled - LiquidFun not available');
       }
     };
 
