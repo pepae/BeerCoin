@@ -199,17 +199,20 @@
                             const rawX = event.accelerationIncludingGravity.x || 0;
                             const rawY = event.accelerationIncludingGravity.y || 0;
                             
-                            const deadzone = 1.0;
+                            const deadzone = 0.5; // Reduced deadzone for better sensitivity
                             const filteredX = Math.abs(rawX) > deadzone ? rawX : 0;
                             const filteredY = Math.abs(rawY) > deadzone ? rawY : 0;
                             
-                            const gravityScale = 0.3; // Reduced for mini view
+                            const gravityScale = 0.8; // Increased from 0.3 to 0.8 for more responsive physics
                             const baseGravity = -10;
                             
+                            // More linear scaling for better correspondence to actual tilt
                             const gravityX = -filteredX * gravityScale;
                             let gravityY = baseGravity;
-                            if (Math.abs(filteredY) > 2) {
-                                gravityY = filteredY > 0 ? baseGravity : baseGravity * 0.3;
+                            
+                            // Adjust Y gravity based on tilt but keep it reasonable
+                            if (Math.abs(filteredY) > 1) {
+                                gravityY = filteredY > 0 ? baseGravity : baseGravity * 0.5;
                             }
                             
                             this.world.SetGravity(new this.b2Vec2(gravityX, gravityY));
