@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
-import beerIcon from '../assets/beer-icon.svg';
 
 const Layout = ({ children }) => {
   const { wallet, username, isTrusted, isRegistered } = useWallet();
@@ -42,7 +41,7 @@ const Layout = ({ children }) => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center">
-            <img src={beerIcon} alt="BeerCoin" className="w-8 h-8 mr-2" />
+            <span className="text-2xl mr-2">🍺</span>
             <h1 className="text-xl font-bold text-primary">BeerCoin</h1>
           </div>
           
