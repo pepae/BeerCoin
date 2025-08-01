@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: rgba(0, 0, 0, 0.1);
+            background: transparent;
             font-family: Arial, sans-serif;
             overflow: hidden;
             display: flex;
@@ -19,7 +19,7 @@
         }
 
         #canvas {
-            background: rgba(0, 0, 0, 0.1);
+            background: transparent;
             transform: scale(3);
             transform-origin: center;
         }
@@ -264,7 +264,7 @@
             }
 
             addFoamLayer() {
-                const particleSpacing = 0.15;
+                const particleSpacing = 0.11; // Reduced from 0.15 to 0.11 for 2x more foam particles
                 const glassLeft = -0.8;
                 const glassRight = 0.8;
                 const foamBottom = 4.2;

@@ -105,7 +105,7 @@ const Dashboard = () => {
                 frameBorder="0"
                 className="rounded-lg border-0"
                 title="Interactive Beer Glass"
-                style={{ background: 'rgba(0, 0, 0, 0.1)' }}
+                style={{ background: 'transparent' }}
               />
             </div>
           </div>
@@ -115,7 +115,7 @@ const Dashboard = () => {
         {isRegistered && (
           <div className="beer-card">
             <h3 className="text-lg font-medium mb-2">Pending Rewards</h3>
-            <p className="beer-balance mb-1">{parseFloat(pendingRewards).toFixed(4)} BEER</p>
+            <p className="beer-balance mb-1">{parseFloat(pendingRewards).toFixed(2)} BEER</p>
             <p className="text-sm text-muted-foreground mb-4">Claimable now</p>
             
             {/* Referral Information for Trusted Users */}
