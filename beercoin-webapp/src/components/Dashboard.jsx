@@ -729,7 +729,7 @@ const Dashboard = () => {
             console.error('LiquidFun loaded but b2World not available');
             console.log('Available global objects:', Object.keys(window).slice(0, 20));
           }
-        }, 500);
+        }, 2000); // Wait longer for WebAssembly runtime to be fully initialized
         
       } catch (error) {
         console.error('Failed to load LiquidFun:', error);
