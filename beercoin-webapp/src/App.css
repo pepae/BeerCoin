@@ -127,7 +127,8 @@
 }
 
 .beer-card {
-  @apply rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md;
+  @apply rounded-xl border border-border p-6 shadow-sm transition-all hover:shadow-md;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 .beer-button {

@@ -109,8 +109,9 @@ const Dashboard = () => {
                 width="180" 
                 height="240"
                 frameBorder="0"
-                className="rounded-lg border border-primary/20"
+                className="rounded-lg border-0"
                 title="Interactive Beer Glass"
+                style={{ background: 'rgba(0, 0, 0, 0.15)' }}
               />
             </div>
           </div>
