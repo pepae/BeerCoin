@@ -105,7 +105,7 @@ const Dashboard = () => {
             <div className="flex-shrink-0">
               <iframe 
                 ref={beerGlassRef}
-                src="/beer-mini.html"
+                src="beer-mini.html"
                 width="120" 
                 height="160"
                 frameBorder="0"
