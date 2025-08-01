@@ -654,16 +654,17 @@ const Dashboard = () => {
         // Wait a bit more for the library to fully initialize (EXACT COPY from beer.html)
         setTimeout(() => {
           console.log('Checking available objects:');
-          console.log('b2World:', typeof window.b2World);
+          console.log('b2World:', typeof b2World);
           console.log('window.b2World:', typeof window.b2World);
-          console.log('Box2D:', typeof window.Box2D);
+          console.log('Box2D:', typeof Box2D);
           console.log('window.Box2D:', typeof window.Box2D);
           
           // Check what's actually available in the global scope
           const box2dObjects = Object.keys(window).filter(key => key.startsWith('b2'));
           console.log('Available b2 objects:', box2dObjects);
+          console.log('Module status:', typeof Module !== 'undefined' ? (Module.calledRun ? 'Ready' : 'Loading') : 'Not found');
           
-          if (typeof window.b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
+          if (typeof b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
             console.log('LiquidFun initialized successfully!');
             beerGlassRef.current = new BeerGlass();
             
@@ -672,29 +673,31 @@ const Dashboard = () => {
               if (beerGlassRef.current) {
                 console.log('Auto-deploying beer and foam...');
                 beerGlassRef.current.fillGlassWithBeer();
-                // Shorter delays for compact display
-                setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
-                setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                // 3 second delay before foam starts, then shorter delays between foam layers
+                setTimeout(() => beerGlassRef.current.addFoamLayer(), 3000); // 3s delay for first foam
+                setTimeout(() => beerGlassRef.current.addFoamLayer(), 3200); // 200ms between layers
+                setTimeout(() => beerGlassRef.current.addFoamLayer(), 3400); // 200ms between layers
+                setTimeout(() => beerGlassRef.current.addFoamLayer(), 3600); // 200ms between layers
               }
             }, 1000);
-          } else if (typeof window.Box2D !== 'undefined') {
+          } else if (typeof Box2D !== 'undefined') {
             console.log('Box2D available, trying alternative initialization...');
-            // Try to use Box2D module if b2World is not directly available (EXACT COPY from beer.html)
+            // Try to use Box2D module if b2World is not directly available
             // Map all necessary Box2D objects to window
-            window.b2World = window.Box2D.b2World || window.Box2D.Dynamics?.b2World;
-            window.b2Vec2 = window.Box2D.b2Vec2 || window.Box2D.Common?.Math?.b2Vec2;
-            window.b2BodyDef = window.Box2D.b2BodyDef || window.Box2D.Dynamics?.b2BodyDef;
-            window.b2_staticBody = window.Box2D.b2_staticBody || window.Box2D.Dynamics?.b2Body?.b2_staticBody || window.Box2D.b2BodyType?.b2_staticBody || 0;
-            window.b2PolygonShape = window.Box2D.b2PolygonShape || window.Box2D.Collision?.Shapes?.b2PolygonShape;
-            window.b2CircleShape = window.Box2D.b2CircleShape || window.Box2D.Collision?.Shapes?.b2CircleShape;
-            window.b2ParticleSystemDef = window.Box2D.b2ParticleSystemDef;
-            window.b2ParticleGroupDef = window.Box2D.b2ParticleGroupDef;
-            window.b2ParticleDef = window.Box2D.b2ParticleDef;
-            window.b2ParticleColor = window.Box2D.b2ParticleColor;
-            window.b2_waterParticle = window.Box2D.b2_waterParticle || window.Box2D.b2ParticleFlag?.b2_waterParticle || 1;
-            window.b2_viscousParticle = window.Box2D.b2_viscousParticle || window.Box2D.b2ParticleFlag?.b2_viscousParticle || 64;
-            window.b2Transform = window.Box2D.b2Transform || window.Box2D.Common?.Math?.b2Transform;
-            window.b2Rot = window.Box2D.b2Rot || window.Box2D.Common?.Math?.b2Rot;
+            window.b2World = Box2D.b2World || Box2D.Dynamics?.b2World;
+            window.b2Vec2 = Box2D.b2Vec2 || Box2D.Common?.Math?.b2Vec2;
+            window.b2BodyDef = Box2D.b2BodyDef || Box2D.Dynamics?.b2BodyDef;
+            window.b2_staticBody = Box2D.b2_staticBody || Box2D.Dynamics?.b2Body?.b2_staticBody || Box2D.b2BodyType?.b2_staticBody || 0;
+            window.b2PolygonShape = Box2D.b2PolygonShape || Box2D.Collision?.Shapes?.b2PolygonShape;
+            window.b2CircleShape = Box2D.b2CircleShape || Box2D.Collision?.Shapes?.b2CircleShape;
+            window.b2ParticleSystemDef = Box2D.b2ParticleSystemDef;
+            window.b2ParticleGroupDef = Box2D.b2ParticleGroupDef;
+            window.b2ParticleDef = Box2D.b2ParticleDef;
+            window.b2ParticleColor = Box2D.b2ParticleColor;
+            window.b2_waterParticle = Box2D.b2_waterParticle || Box2D.b2ParticleFlag?.b2_waterParticle || 1;
+            window.b2_viscousParticle = Box2D.b2_viscousParticle || Box2D.b2ParticleFlag?.b2_viscousParticle || 64;
+            window.b2Transform = Box2D.b2Transform || Box2D.Common?.Math?.b2Transform;
+            window.b2Rot = Box2D.b2Rot || Box2D.Common?.Math?.b2Rot;
             
             console.log('Mapped Box2D objects to window:', {
               b2World: !!window.b2World,
@@ -706,7 +709,6 @@ const Dashboard = () => {
             });
             
             if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
-              console.log('All required Box2D objects mapped successfully, creating BeerGlass...');
               beerGlassRef.current = new BeerGlass();
               
               // Auto-deploy beer and foam on startup
@@ -714,8 +716,11 @@ const Dashboard = () => {
                 if (beerGlassRef.current) {
                   console.log('Auto-deploying beer and foam...');
                   beerGlassRef.current.fillGlassWithBeer();
-                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
-                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                  // 3 second delay before foam starts, then shorter delays between foam layers
+                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 3000); // 3s delay for first foam
+                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 3200); // 200ms between layers
+                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 3400); // 200ms between layers
+                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 3600); // 200ms between layers
                 }
               }, 1000);
             } else {
@@ -730,7 +735,7 @@ const Dashboard = () => {
             console.error('LiquidFun loaded but b2World not available');
             console.log('Available global objects:', Object.keys(window).slice(0, 20));
           }
-        }, 500); // EXACT COPY from beer.html - 500ms timeout
+        }, 1500); // Increased timeout to ensure WebAssembly runtime is fully ready
         
       } catch (error) {
         console.error('Failed to load LiquidFun:', error);
