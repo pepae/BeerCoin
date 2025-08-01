@@ -706,17 +706,30 @@ const Dashboard = () => {
             });
             
             if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
-              beerGlassRef.current = new BeerGlass();
-              
-              // Auto-deploy beer and foam on startup
-              setTimeout(() => {
-                if (beerGlassRef.current) {
-                  console.log('Auto-deploying beer and foam...');
-                  beerGlassRef.current.fillGlassWithBeer();
-                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
-                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+              // Wait for WebAssembly Module to be fully ready before creating BeerGlass
+              const initializeBeerGlass = () => {
+                // Check if Module is available and runtime is ready
+                if (typeof window.Module !== 'undefined' && window.Module.calledRun === true) {
+                  console.log('Module runtime is ready, creating BeerGlass...');
+                  beerGlassRef.current = new BeerGlass();
+                  
+                  // Auto-deploy beer and foam on startup
+                  setTimeout(() => {
+                    if (beerGlassRef.current) {
+                      console.log('Auto-deploying beer and foam...');
+                      beerGlassRef.current.fillGlassWithBeer();
+                      setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
+                      setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                    }
+                  }, 1000);
+                } else {
+                  console.log('Module not ready yet, retrying in 200ms...');
+                  setTimeout(initializeBeerGlass, 200);
                 }
-              }, 1000);
+              };
+              
+              // Start the initialization check
+              initializeBeerGlass();
             } else {
               console.error('Could not initialize all required Box2D objects');
               console.log('Missing objects:', {
