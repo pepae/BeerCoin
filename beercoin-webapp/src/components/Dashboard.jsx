@@ -106,8 +106,8 @@ const Dashboard = () => {
               <iframe 
                 ref={beerGlassRef}
                 src="beer-mini.html"
-                width="360" 
-                height="480"
+                width="180" 
+                height="240"
                 frameBorder="0"
                 className="rounded-lg border border-primary/20"
                 title="Interactive Beer Glass"
