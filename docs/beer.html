@@ -108,11 +108,11 @@
         <button onclick="toggleGravity()">Toggle Gravity</button>
         <button onclick="toggleAccelerometer()">Toggle Accelerometer</button>
         <br><br>
-        <label>Beer Density: <input type="range" id="beerDensity" min="1" max="10" value="4" oninput="updateDensity()"> <span id="beerDensityValue">4</span></label><br>
-        <label>Foam Density: <input type="range" id="foamDensity" min="1" max="8" value="3" oninput="updateDensity()"> <span id="foamDensityValue">3</span></label><br>
-        <label>Beer Volume: <input type="range" id="beerVolume" min="1" max="10" value="5" oninput="updateVolume()"> <span id="beerVolumeValue">5</span></label><br>
-        <label>Foam Volume: <input type="range" id="foamVolume" min="1" max="8" value="3" oninput="updateVolume()"> <span id="foamVolumeValue">3</span></label><br>
-        <label>Simulation Speed: <input type="range" id="simSpeed" min="0.1" max="3" step="0.1" value="1" oninput="updateSimSpeed()"> <span id="simSpeedValue">1.0x</span></label><br>
+        <label>Beer Density: <input type="range" id="beerDensity" min="1" max="10" value="9" oninput="updateDensity()"> <span id="beerDensityValue">9</span></label><br>
+        <label>Foam Density: <input type="range" id="foamDensity" min="1" max="8" value="7" oninput="updateDensity()"> <span id="foamDensityValue">7</span></label><br>
+        <label>Beer Volume: <input type="range" id="beerVolume" min="1" max="10" value="9" oninput="updateVolume()"> <span id="beerVolumeValue">9</span></label><br>
+        <label>Foam Volume: <input type="range" id="foamVolume" min="1" max="8" value="7" oninput="updateVolume()"> <span id="foamVolumeValue">7</span></label><br>
+        <label>Simulation Speed: <input type="range" id="simSpeed" min="0.1" max="3" step="0.1" value="1.2" oninput="updateSimSpeed()"> <span id="simSpeedValue">1.2x</span></label><br>
         <label>Damping: <input type="range" id="damping" min="0" max="1" step="0.1" value="0.2" oninput="updatePhysics()"> <span id="dampingValue">0.2</span></label><br>
         <label>Viscosity: <input type="range" id="viscosity" min="0" max="1" step="0.05" value="0.1" oninput="updatePhysics()"> <span id="viscosityValue">0.1</span></label>
     </div>
@@ -245,7 +245,18 @@
                 this.animationId = null;
                 this.particleCount = 0;
                 this.gravityReversed = false;
-                this.simulationSpeed = 1.0; // Default simulation speed multiplier
+                this.simulationSpeed = 1.2; // Default simulation speed multiplier (updated to match UI)
+                
+                // Glass dimensions and position (configurable)
+                this.glassWidth = 4; // Width of the glass container
+                this.glassHeight = 12; // Height of the glass container  
+                this.glassX = 0; // X position offset
+                this.glassY = 2; // Y position (bottom of glass)
+                
+                // Glass image overlay
+                this.glassImage = null;
+                this.glassImageOpacity = 0.5;
+                this.loadGlassImage();
                 
                 this.init();
             }
@@ -320,6 +331,65 @@
                 } catch (e) {
                     console.warn('Some physics parameters not supported:', e.message);
                 }
+            }
+
+            loadGlassImage() {
+                this.glassImage = new Image();
+                this.glassImage.onload = () => {
+                    console.log('✅ Beer glass image loaded successfully');
+                    console.log('Image dimensions:', this.glassImage.naturalWidth, 'x', this.glassImage.naturalHeight);
+                };
+                
+                const imagePaths = [
+                    './beerglass.png',
+                    'beerglass.png',
+                    '/beerglass.png',
+                    '../beerglass.png'
+                ];
+                
+                let currentPathIndex = 0;
+                
+                const tryNextPath = () => {
+                    if (currentPathIndex >= imagePaths.length) {
+                        console.warn('All image paths failed, using outline only');
+                        this.glassImage = null;
+                        return;
+                    }
+                    
+                    const path = imagePaths[currentPathIndex];
+                    console.log(`Trying to load glass image from: ${path}`);
+                    
+                    this.glassImage.onerror = () => {
+                        console.warn(`Failed to load from: ${path}`);
+                        currentPathIndex++;
+                        setTimeout(tryNextPath, 100);
+                    };
+                    
+                    this.glassImage.src = path;
+                };
+                
+                tryNextPath();
+            }
+
+            updateGlassDimensions() {
+                // Update glass dimensions from controls
+                this.glassWidth = parseFloat(document.getElementById('glassWidth')?.value || 4);
+                this.glassHeight = parseFloat(document.getElementById('glassHeight')?.value || 12);
+                this.glassX = parseFloat(document.getElementById('glassX')?.value || 0);
+                this.glassY = parseFloat(document.getElementById('glassY')?.value || 2);
+                
+                console.log(`Glass dimensions updated: ${this.glassWidth}x${this.glassHeight} at (${this.glassX}, ${this.glassY})`);
+                
+                // Recreate glass walls with new dimensions  
+                if (this.world) {
+                    this.createGlass();
+                }
+            }
+
+            updateGlassOverlay() {
+                const opacity = parseFloat(document.getElementById('glassOpacity')?.value || 50);
+                this.glassImageOpacity = opacity / 100; // Convert to 0-1 range
+                console.log('Glass image opacity updated to:', this.glassImageOpacity);
             }
 
             createGlass() {
@@ -611,7 +681,7 @@
                 
                 const density = parseInt(document.getElementById('foamDensity').value);
                 const volume = parseInt(document.getElementById('foamVolume').value);
-                const particleSpacing = 1.0 - (density * 0.08); // Closer spacing for higher density
+                const particleSpacing = (1.0 - (density * 0.08)) * 0.7; // 30% denser (0.7 factor)
                 
                 // Glass dimensions (inside the walls)
                 const glassLeft = -3.2;
@@ -703,9 +773,8 @@
             }
 
             render() {
-                // Clear canvas
-                this.ctx.fillStyle = 'rgba(26, 26, 26, 0.1)';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                // Clear canvas with transparent background
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
                 // Draw glass outline
                 this.drawGlass();
@@ -713,60 +782,75 @@
                 // Draw all particles from the unified system (each with their own color)
                 this.drawAllParticles();
 
+                // Draw glass image overlay
+                this.drawGlassOverlay();
+
                 // Update debug info
                 this.updateDebugInfo();
             }
 
             drawGlass() {
-                this.ctx.strokeStyle = '#8B4513';
-                this.ctx.lineWidth = 3;
-                this.ctx.beginPath();
-                
-                // Glass outline (simple rectangular shape matching our collision walls)
-                const bottomLeft = this.worldToCanvas({ x: -4, y: 5 });
-                const bottomRight = this.worldToCanvas({ x: 4, y: 5 });
-                const topLeft = this.worldToCanvas({ x: -4, y: 20 });
-                const topRight = this.worldToCanvas({ x: 4, y: 20 });
+                // Glass outline disabled - using PNG overlay only
+                /* 
+                // Glass outline using configurable dimensions - make it look like a real beer glass
+                const halfWidth = this.glassWidth / 2;
+                const bottomLeft = this.worldToCanvas({ x: this.glassX - halfWidth, y: this.glassY });
+                const bottomRight = this.worldToCanvas({ x: this.glassX + halfWidth, y: this.glassY });
+                const topLeft = this.worldToCanvas({ x: this.glassX - halfWidth, y: this.glassY + this.glassHeight });
+                const topRight = this.worldToCanvas({ x: this.glassX + halfWidth, y: this.glassY + this.glassHeight });
 
-                // Draw glass outline
+                // Draw elegant glass outline (light gray/silver)
+                this.ctx.strokeStyle = 'rgba(200, 200, 200, 0.8)';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
                 this.ctx.moveTo(bottomLeft.x, bottomLeft.y);
                 this.ctx.lineTo(topLeft.x, topLeft.y);
                 this.ctx.lineTo(topRight.x, topRight.y);
                 this.ctx.lineTo(bottomRight.x, bottomRight.y);
                 this.ctx.lineTo(bottomLeft.x, bottomLeft.y);
-                
                 this.ctx.stroke();
 
-                // DEBUG: Draw collision shapes in red to match our new wall positions
-                this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
-                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
-                this.ctx.lineWidth = 2;
-                
-                // Bottom wall (floor)
-                const bottomWallTL = this.worldToCanvas({ x: -4, y: 4 });
-                const bottomWallBR = this.worldToCanvas({ x: 4, y: 5 });
-                this.ctx.fillRect(bottomWallTL.x, bottomWallTL.y, bottomWallBR.x - bottomWallTL.x, bottomWallBR.y - bottomWallTL.y);
-                this.ctx.strokeRect(bottomWallTL.x, bottomWallTL.y, bottomWallBR.x - bottomWallTL.x, bottomWallBR.y - bottomWallTL.y);
-                
-                // Left wall 
-                const leftWallTL = this.worldToCanvas({ x: -4, y: 5 });
-                const leftWallBR = this.worldToCanvas({ x: -3.5, y: 20 });
-                this.ctx.fillRect(leftWallTL.x, leftWallTL.y, leftWallBR.x - leftWallTL.x, leftWallBR.y - leftWallTL.y);
-                this.ctx.strokeRect(leftWallTL.x, leftWallTL.y, leftWallBR.x - leftWallTL.x, leftWallBR.y - leftWallTL.y);
-                
-                // Right wall
-                const rightWallTL = this.worldToCanvas({ x: 3.5, y: 5 });
-                const rightWallBR = this.worldToCanvas({ x: 4, y: 20 });
-                this.ctx.fillRect(rightWallTL.x, rightWallTL.y, rightWallBR.x - rightWallTL.x, rightWallBR.y - rightWallTL.y);
-                this.ctx.strokeRect(rightWallTL.x, rightWallTL.y, rightWallBR.x - rightWallTL.x, rightWallBR.y - rightWallTL.y);
-
-                // Add glass shine effect
-                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                // Add glass shine effect on the left side
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
                 this.ctx.lineWidth = 1;
                 this.ctx.beginPath();
-                this.ctx.moveTo(topLeft.x + 10, topLeft.y);
-                this.ctx.lineTo(bottomLeft.x + 5, bottomLeft.y - 50);
+                this.ctx.moveTo(topLeft.x + 8, topLeft.y);
+                this.ctx.lineTo(bottomLeft.x + 4, bottomLeft.y - 30);
                 this.ctx.stroke();
+
+                // Add subtle glass rim highlight
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                this.ctx.lineWidth = 1.5;
+                this.ctx.beginPath();
+                this.ctx.moveTo(topLeft.x, topLeft.y);
+                this.ctx.lineTo(topRight.x, topRight.y);
+                this.ctx.stroke();
+                */
+            }
+
+            drawGlassOverlay() {
+                // Only draw if image is properly loaded and not in broken state
+                if (this.glassImage && this.glassImage.complete && this.glassImage.naturalWidth > 0 && this.glassImageOpacity > 0) {
+                    // Save current canvas state
+                    const oldAlpha = this.ctx.globalAlpha;
+                    
+                    // Set opacity for glass image
+                    this.ctx.globalAlpha = this.glassImageOpacity;
+                    
+                    // Calculate glass image position and size to match the physics glass
+                    const halfWidth = this.glassWidth / 2;
+                    const topLeft = this.worldToCanvas({ x: this.glassX - halfWidth, y: this.glassY + this.glassHeight });
+                    const bottomRight = this.worldToCanvas({ x: this.glassX + halfWidth, y: this.glassY });
+                    
+                    const imageWidth = bottomRight.x - topLeft.x;
+                    const imageHeight = bottomRight.y - topLeft.y;
+                    
+                    // Draw the beer glass image overlay
+                    this.ctx.drawImage(this.glassImage, topLeft.x, topLeft.y, imageWidth, imageHeight);
+                    
+                    // Restore canvas state
+                    this.ctx.globalAlpha = oldAlpha;
+                }
             }
 
             drawAllParticles() {
@@ -775,17 +859,40 @@
 
                 console.log(`Drawing ${particleCount} particles with individual colors`);
                 
+                // Debug module availability
+                if (typeof Module === 'undefined') {
+                    console.error('Module not available for memory access');
+                    return;
+                }
+                
                 try {
-                    // Get position and color buffers
+                    // Get position buffer
                     const posOffset = this.particleSystem.GetPositionBuffer();
-                    const colorOffset = this.particleSystem.GetColorBuffer();
+                    console.log('Position buffer:', posOffset, typeof posOffset);
                     
-                    if (posOffset && posOffset.e !== undefined && colorOffset && colorOffset.e !== undefined) {
-                        console.log('Found position and color buffers');
+                    if (posOffset && typeof posOffset === 'object' && posOffset.e !== undefined) {
+                        console.log('Found position buffer with offset:', posOffset.e);
                         
-                        // Read position and color data
+                        // Check if we can access memory
+                        if (!Module.HEAPU8 || !Module.HEAPU8.buffer) {
+                            console.error('Module.HEAPU8 buffer not available');
+                            return;
+                        }
+                        
+                        // Read position data
                         const positions = new Float32Array(Module.HEAPU8.buffer, posOffset.e, particleCount * 2);
-                        const colors = new Uint8Array(Module.HEAPU8.buffer, colorOffset.e, particleCount * 4); // RGBA
+                        console.log('Position data first 6 values:', Array.from(positions.slice(0, 6)));
+                        
+                        // Try to get color buffer
+                        const colorOffset = this.particleSystem.GetColorBuffer();
+                        let colors = null;
+                        
+                        if (colorOffset && colorOffset.e !== undefined) {
+                            console.log('Found color buffer');
+                            colors = new Uint8Array(Module.HEAPU8.buffer, colorOffset.e, particleCount * 4);
+                        } else {
+                            console.log('No color buffer available - will use particle position to determine color');
+                        }
                         
                         let renderedCount = 0;
                         for (let i = 0; i < particleCount; i++) {
@@ -793,42 +900,55 @@
                             const physX = positions[i * 2];
                             const physY = positions[i * 2 + 1];
                             
-                            // Get particle color
-                            const r = colors[i * 4];
-                            const g = colors[i * 4 + 1];
-                            const b = colors[i * 4 + 2];
-                            const a = colors[i * 4 + 3];
+                            // Skip particles with invalid positions
+                            if (isNaN(physX) || isNaN(physY)) {
+                                continue;
+                            }
                             
                             // Convert to canvas coordinates
                             const canvasPos = this.worldToCanvas({ x: physX, y: physY });
                             
-                            // Check if particle is visible
-                            if (canvasPos.x >= -100 && canvasPos.x <= this.canvas.width + 100 &&
-                                canvasPos.y >= -100 && canvasPos.y <= this.canvas.height + 100) {
+                            // Check if particle is visible (more liberal bounds)
+                            if (canvasPos.x >= -50 && canvasPos.x <= this.canvas.width + 50 &&
+                                canvasPos.y >= -50 && canvasPos.y <= this.canvas.height + 50) {
                                 
-                                // Set particle color
-                                this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
-                                this.ctx.strokeStyle = `rgba(${Math.max(0, r-20)}, ${Math.max(0, g-20)}, ${Math.max(0, b-20)}, ${a/255})`;
-                                this.ctx.lineWidth = 1;
+                                // Set particle color (use color buffer if available, otherwise determine by position)
+                                if (colors) {
+                                    const r = colors[i * 4];
+                                    const g = colors[i * 4 + 1];
+                                    const b = colors[i * 4 + 2];
+                                    const a = colors[i * 4 + 3];
+                                    this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
+                                } else {
+                                    // Determine color by position - foam particles are higher up in the glass
+                                    if (physY > 12) {
+                                        // Foam particles (white/cream)
+                                        this.ctx.fillStyle = `rgba(255, 255, 255, 0.9)`;
+                                    } else {
+                                        // Beer particles (golden yellow)
+                                        this.ctx.fillStyle = `rgba(255, 193, 7, 0.95)`;
+                                    }
+                                }
                                 
                                 this.ctx.beginPath();
-                                this.ctx.arc(canvasPos.x, canvasPos.y, 6, 0, Math.PI * 2);
+                                this.ctx.arc(canvasPos.x, canvasPos.y, 
+                                    physY > 12 ? 3 : 4, // Foam particles slightly smaller
+                                    0, Math.PI * 2);
                                 this.ctx.fill();
-                                this.ctx.stroke();
                                 renderedCount++;
                                 
                                 // Debug output for first few particles
                                 if (i < 3) {
-                                    console.log(`Particle ${i}: pos(${physX.toFixed(1)}, ${physY.toFixed(1)}) color(${r},${g},${b},${a}) -> canvas(${canvasPos.x.toFixed(0)}, ${canvasPos.y.toFixed(0)})`);
+                                    console.log(`Particle ${i}: pos(${physX.toFixed(1)}, ${physY.toFixed(1)}) -> canvas(${canvasPos.x.toFixed(0)}, ${canvasPos.y.toFixed(0)})`);
                                 }
                             }
                         }
                         
-                        console.log(`✅ Successfully rendered ${renderedCount}/${particleCount} particles with individual colors`);
+                        console.log(`✅ Successfully rendered ${renderedCount}/${particleCount} particles`);
                         return; // Success - exit early
                         
                     } else {
-                        console.log('Position or color buffer offset not available');
+                        console.log('Position buffer offset not available, posOffset:', posOffset);
                     }
                     
                 } catch (error) {
@@ -836,7 +956,7 @@
                 }
                 
                 // Fallback: Draw test particles to verify rendering works
-                console.log('Drawing test particles as fallback...');
+                console.log('🔴 Drawing test particles as fallback...');
                 this.ctx.fillStyle = '#FF0000'; // Red for visibility
                 
                 // Draw test particles at known positions
@@ -1056,6 +1176,19 @@
                     if (typeof b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
                         console.log('LiquidFun initialized successfully!');
                         beerGlass = new BeerGlass();
+                        
+                        // Auto-deploy beer and foam on startup
+                        setTimeout(() => {
+                            if (beerGlass) {
+                                console.log('Auto-deploying beer and foam...');
+                                beerGlass.fillGlassWithBeer();
+                                // 3 second delay before foam starts, then shorter delays between foam layers
+                                setTimeout(() => beerGlass.addFoamLayer(), 3000); // 3s delay for first foam
+                                setTimeout(() => beerGlass.addFoamLayer(), 3200); // 200ms between layers
+                                setTimeout(() => beerGlass.addFoamLayer(), 3400); // 200ms between layers
+                                setTimeout(() => beerGlass.addFoamLayer(), 3600); // 200ms between layers
+                            }
+                        }, 1000);
                     } else if (typeof Box2D !== 'undefined') {
                         console.log('Box2D available, trying alternative initialization...');
                         // Try to use Box2D module if b2World is not directly available
@@ -1086,6 +1219,19 @@
                         
                         if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
                             beerGlass = new BeerGlass();
+                            
+                            // Auto-deploy beer and foam on startup
+                            setTimeout(() => {
+                                if (beerGlass) {
+                                    console.log('Auto-deploying beer and foam...');
+                                    beerGlass.fillGlassWithBeer();
+                                    // 3 second delay before foam starts, then shorter delays between foam layers
+                                    setTimeout(() => beerGlass.addFoamLayer(), 3000); // 3s delay for first foam
+                                    setTimeout(() => beerGlass.addFoamLayer(), 3200); // 200ms between layers
+                                    setTimeout(() => beerGlass.addFoamLayer(), 3400); // 200ms between layers
+                                    setTimeout(() => beerGlass.addFoamLayer(), 3600); // 200ms between layers
+                                }
+                            }, 1000);
                         } else {
                             console.error('Could not initialize all required Box2D objects');
                             console.log('Missing objects:', {
