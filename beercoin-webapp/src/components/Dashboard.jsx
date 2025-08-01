@@ -665,18 +665,49 @@ const Dashboard = () => {
           
           if (typeof window.b2World !== 'undefined' || typeof window.b2World !== 'undefined') {
             console.log('LiquidFun initialized successfully!');
-            beerGlassRef.current = new BeerGlass();
             
-            // Auto-deploy beer and foam on startup (EXACT COPY from beer.html)
-            setTimeout(() => {
-              if (beerGlassRef.current) {
-                console.log('Auto-deploying beer and foam...');
-                beerGlassRef.current.fillGlassWithBeer();
-                // Shorter delays for compact display
-                setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
-                setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+            // Wait for WebAssembly runtime to be fully initialized
+            const initializeWithRuntime = () => {
+              if (typeof window.Module !== 'undefined' && window.Module.calledRun) {
+                console.log('WebAssembly runtime is ready, creating BeerGlass...');
+                beerGlassRef.current = new BeerGlass();
+                
+                // Auto-deploy beer and foam on startup (EXACT COPY from beer.html)
+                setTimeout(() => {
+                  if (beerGlassRef.current) {
+                    console.log('Auto-deploying beer and foam...');
+                    beerGlassRef.current.fillGlassWithBeer();
+                    // Shorter delays for compact display
+                    setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
+                    setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                  }
+                }, 1000);
+              } else if (typeof window.Module !== 'undefined') {
+                console.log('Waiting for WebAssembly runtime to initialize...');
+                // Set up runtime ready callback
+                const originalCallback = window.Module.onRuntimeInitialized;
+                window.Module.onRuntimeInitialized = () => {
+                  if (originalCallback) originalCallback();
+                  console.log('WebAssembly runtime initialized, creating BeerGlass...');
+                  beerGlassRef.current = new BeerGlass();
+                  
+                  // Auto-deploy beer and foam on startup
+                  setTimeout(() => {
+                    if (beerGlassRef.current) {
+                      console.log('Auto-deploying beer and foam...');
+                      beerGlassRef.current.fillGlassWithBeer();
+                      setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
+                      setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                    }
+                  }, 1000);
+                };
+              } else {
+                console.log('Module not available yet, retrying in 200ms...');
+                setTimeout(initializeWithRuntime, 200);
               }
-            }, 1000);
+            };
+            
+            initializeWithRuntime();
           } else if (typeof window.Box2D !== 'undefined') {
             console.log('Box2D available, trying alternative initialization...');
             // Try to use Box2D module if b2World is not directly available (EXACT COPY from beer.html)
@@ -706,17 +737,47 @@ const Dashboard = () => {
             });
             
             if (window.b2World && window.b2Vec2 && window.b2PolygonShape) {
-              beerGlassRef.current = new BeerGlass();
-              
-              // Auto-deploy beer and foam on startup
-              setTimeout(() => {
-                if (beerGlassRef.current) {
-                  console.log('Auto-deploying beer and foam...');
-                  beerGlassRef.current.fillGlassWithBeer();
-                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
-                  setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+              // Wait for WebAssembly runtime to be fully initialized
+              const initializeWithRuntime = () => {
+                if (typeof window.Module !== 'undefined' && window.Module.calledRun) {
+                  console.log('WebAssembly runtime is ready, creating BeerGlass...');
+                  beerGlassRef.current = new BeerGlass();
+                  
+                  // Auto-deploy beer and foam on startup
+                  setTimeout(() => {
+                    if (beerGlassRef.current) {
+                      console.log('Auto-deploying beer and foam...');
+                      beerGlassRef.current.fillGlassWithBeer();
+                      setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
+                      setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                    }
+                  }, 1000);
+                } else if (typeof window.Module !== 'undefined') {
+                  console.log('Waiting for WebAssembly runtime to initialize...');
+                  // Set up runtime ready callback
+                  const originalCallback = window.Module.onRuntimeInitialized;
+                  window.Module.onRuntimeInitialized = () => {
+                    if (originalCallback) originalCallback();
+                    console.log('WebAssembly runtime initialized, creating BeerGlass...');
+                    beerGlassRef.current = new BeerGlass();
+                    
+                    // Auto-deploy beer and foam on startup
+                    setTimeout(() => {
+                      if (beerGlassRef.current) {
+                        console.log('Auto-deploying beer and foam...');
+                        beerGlassRef.current.fillGlassWithBeer();
+                        setTimeout(() => beerGlassRef.current.addFoamLayer(), 1500);
+                        setTimeout(() => beerGlassRef.current.addFoamLayer(), 1700);
+                      }
+                    }, 1000);
+                  };
+                } else {
+                  console.log('Module not available yet, retrying in 200ms...');
+                  setTimeout(initializeWithRuntime, 200);
                 }
-              }, 1000);
+              };
+              
+              initializeWithRuntime();
             } else {
               console.error('Could not initialize all required Box2D objects');
               console.log('Missing objects:', {
