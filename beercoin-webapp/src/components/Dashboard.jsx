@@ -102,17 +102,24 @@ const Dashboard = () => {
             </div>
             
             {/* Interactive Beer Glass - Embedded HTML */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0" style={{ 
+              width: '360px', 
+              height: '480px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden'
+            }}>
               <iframe 
                 ref={beerGlassRef}
                 src="beer-mini.html"
                 width="120" 
                 height="160"
                 frameBorder="0"
-                className="rounded-lg border-0"
+                className="border-0"
                 style={{ 
                   transform: 'scale(3)',
-                  transformOrigin: 'center'
+                  transformOrigin: 'center center'
                 }}
                 title="Interactive Beer Glass"
               />
