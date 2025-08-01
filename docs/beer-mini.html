@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: transparent;
+            background: rgba(0, 0, 0, 0.15);
             font-family: Arial, sans-serif;
             overflow: hidden;
             display: flex;
@@ -19,7 +19,7 @@
         }
 
         #canvas {
-            background: transparent;
+            background: rgba(0, 0, 0, 0.15);
             transform: scale(3);
             transform-origin: center;
         }
@@ -151,7 +151,7 @@
                 const particleSystemDef = new this.b2ParticleSystemDef();
                 particleSystemDef.set_radius(0.08); // Smaller particles for mini view
                 this.particleSystem = this.world.CreateParticleSystem(particleSystemDef);
-                this.particleSystem.SetMaxParticleCount(1000); // Much smaller limit
+                this.particleSystem.SetMaxParticleCount(2000); // Increased from 1000 to 2000 for more particles
             }
 
             createGlass() {
@@ -231,7 +231,7 @@
             }
 
             fillGlassWithBeer() {
-                const particleSpacing = 0.2;
+                const particleSpacing = 0.14; // Reduced from 0.2 to 0.14 for 2x more particles
                 const glassLeft = -0.9;
                 const glassRight = 0.9;
                 const glassBottom = 1.7;
