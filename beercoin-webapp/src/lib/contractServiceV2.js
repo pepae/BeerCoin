@@ -159,13 +159,42 @@ class ContractServiceV2 {
   async claimRewards() {
     try {
       if (!this.distributorContract) throw new Error('Contract not initialized');
+      if (!this.signer) throw new Error('Wallet not connected');
+      
+      // Check if distribution is active first
+      const isActive = await this.distributorContract.distributionActive();
+      if (!isActive) {
+        throw new Error('Distribution is currently inactive');
+      }
+      
+      // Check if user has pending rewards
+      const userAddress = await this.signer.getAddress();
+      const pendingRewards = await this.distributorContract.calculatePendingRewards(userAddress);
+      if (pendingRewards.toString() === '0') {
+        throw new Error('No rewards available to claim');
+      }
       
       const tx = await this.distributorContract.claimRewards();
       await tx.wait();
       return { success: true, txHash: tx.hash };
     } catch (error) {
       console.error('Error claiming rewards:', error);
-      return { success: false, error: error.message };
+      
+      // Handle specific contract errors
+      if (error.message?.includes('No rewards to claim')) {
+        return { success: false, error: 'No rewards available to claim' };
+      }
+      if (error.message?.includes('Distribution is currently inactive')) {
+        return { success: false, error: 'Token distribution is currently paused' };
+      }
+      if (error.message?.includes('Not registered')) {
+        return { success: false, error: 'You must be registered to claim rewards' };
+      }
+      if (error.message?.includes('Not active')) {
+        return { success: false, error: 'Your account is not active' };
+      }
+      
+      return { success: false, error: error.message || 'Failed to claim rewards' };
     }
   }
 

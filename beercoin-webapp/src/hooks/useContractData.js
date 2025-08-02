@@ -117,14 +117,17 @@ const useContractData = () => {
     if (!wallet || !isRegistered) throw new Error('Not registered');
     
     try {
-      const tx = await contractServiceV2.claimRewards();
-      await tx.wait();
+      const result = await contractServiceV2.claimRewards();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to claim rewards');
+      }
       
       // Refresh balances and user info
       await refreshBalances();
       await refreshUserInfo();
       
-      return tx;
+      return result;
     } catch (err) {
       console.error('Error claiming rewards:', err);
       throw err;
