@@ -28,14 +28,18 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
         const deviceId = device.deviceId.toLowerCase();
         const label = device.label.toLowerCase();
         
-        // Samsung S24 specific: camera2 0 is main camera
+        // Samsung S24 specific: camera2 0 is main camera (PRIORITY)
         if (deviceId.includes('camera2') && deviceId.includes('0')) {
           return true;
         }
         
-        // Generic main camera detection
-        return (label.includes('back') || label.includes('rear') || label.includes('environment')) &&
-               (label.includes('main') || (label.includes('wide') && !label.includes('ultra')));
+        // Generic main camera detection (but avoid ultra-wide)
+        if ((label.includes('back') || label.includes('rear') || label.includes('environment')) &&
+            !label.includes('ultra') && !deviceId.includes('2')) {
+          return label.includes('main') || label.includes('wide');
+        }
+        
+        return false;
       });
       
       // Samsung S24 ultra-wide is camera2 2 - avoid this for QR scanning
@@ -523,10 +527,10 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
       </p>
       
       {!scanning && !scannedData && (
-        <div>
+        <div className="space-y-4">
           {/* Camera Selection */}
           {cameras.length > 1 && (
-            <div className="mb-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Camera:
               </label>
@@ -582,25 +586,21 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
             </div>
           )}
 
-          <button
-            className="beer-button w-full mb-4"
-            onClick={startScanner}
-          >
-            Start Camera
-          </button>
-          
-          <div className="flex items-center justify-center my-4">
-            <div className="flex-1 h-px bg-border"></div>
-            <span className="px-4 text-muted-foreground text-sm">OR</span>
-            <div className="flex-1 h-px bg-border"></div>
+          <div className="flex gap-2">
+            <button
+              className="beer-button flex-1"
+              onClick={startScanner}
+            >
+              Start Camera
+            </button>
+            
+            <button
+              className="beer-button-secondary flex-1"
+              onClick={() => setShowManual(!showManual)}
+            >
+              {showManual ? 'Hide Manual Entry' : 'Enter Address Manually'}
+            </button>
           </div>
-          
-          <button
-            className="beer-button-secondary w-full"
-            onClick={() => setShowManual(!showManual)}
-          >
-            {showManual ? 'Hide Manual Entry' : 'Enter Address Manually'}
-          </button>
           
           {showManual && (
             <form onSubmit={handleManualSubmit} className="mt-4">
@@ -645,97 +645,6 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
       
       {scanning && (
         <div>
-          {/* Camera Selection while scanning */}
-          {cameras.length > 1 && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Switch Camera:
-              </label>
-              <select
-                value={selectedCamera}
-                onChange={async (e) => {
-                  const newCameraId = e.target.value;
-                  setSelectedCamera(newCameraId);
-                  
-                  // Restart scanner with new camera
-                  if (scannerRef.current && scannerRef.current.isScanning) {
-                    try {
-                      await scannerRef.current.stop();
-                      
-                      // Small delay to ensure camera is released
-                      setTimeout(async () => {
-                        try {
-                          const config = {
-                            fps: 10,
-                            qrbox: { width: 250, height: 250 },
-                            aspectRatio: 1.0,
-                            showTorchButtonIfSupported: true,
-                            showZoomSliderIfSupported: true,
-                            defaultZoomValueIfSupported: 2,
-                          };
-                          
-                          await scannerRef.current.start(
-                            { deviceId: { exact: newCameraId } },
-                            config,
-                            handleScanSuccess,
-                            handleScanError
-                          );
-                        } catch (restartError) {
-                          console.error('Error restarting with new camera:', restartError);
-                          setError('Failed to switch camera. Please stop and start again.');
-                        }
-                      }, 500);
-                    } catch (stopError) {
-                      console.error('Error stopping scanner for camera switch:', stopError);
-                    }
-                  }
-                }}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm"
-              >
-                {cameras.map((camera, index) => {
-                  const label = camera.label || `Camera ${index + 1}`;
-                  const deviceId = camera.deviceId.toLowerCase();
-                  
-                  // Enhanced camera type detection for Samsung S24 and other devices
-                  let displayLabel = label;
-                  let cameraType = '';
-                  
-                  // Samsung S24 specific detection
-                  if (deviceId.includes('camera2') && deviceId.includes('0')) {
-                    cameraType = 'Main';
-                    displayLabel = `📷 ${label} (Main Camera - Best for QR)`;
-                  } else if (deviceId.includes('camera2') && deviceId.includes('2')) {
-                    cameraType = 'Ultra-wide';
-                    displayLabel = `📐 ${label} (Ultra-wide - Not recommended)`;
-                  } else if (deviceId.includes('camera2') && deviceId.includes('1')) {
-                    cameraType = 'Telephoto';
-                    displayLabel = `🔍 ${label} (Telephoto)`;
-                  }
-                  // Generic detection fallback
-                  else if (label.toLowerCase().includes('ultra')) {
-                    cameraType = 'Ultra-wide';
-                    displayLabel = `📐 ${label} (Ultra-wide)`;
-                  } else if (label.toLowerCase().includes('tele')) {
-                    cameraType = 'Telephoto';
-                    displayLabel = `🔍 ${label} (Telephoto)`;
-                  } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
-                    cameraType = 'Main';
-                    displayLabel = `📷 ${label} (Main)`;
-                  } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes('user')) {
-                    cameraType = 'Front';
-                    displayLabel = `🤳 ${label} (Front)`;
-                  }
-                  
-                  return (
-                    <option key={camera.deviceId} value={camera.deviceId}>
-                      {displayLabel}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          )}
-
           <div 
             className="beer-scanner-container" 
             ref={scannerContainerRef}
@@ -744,22 +653,163 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
             {/* Scanner will be inserted here */}
           </div>
           
-          <div className="flex gap-2 mt-4">
-            <button
-              className="beer-button-secondary flex-1"
-              onClick={stopScanner}
-            >
-              Stop Camera
-            </button>
-            
-            {cameras.length > 0 && (
+          {/* All options below camera feed */}
+          <div className="mt-4 space-y-4">
+            {/* Camera Selection while scanning */}
+            {cameras.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Switch Camera:
+                </label>
+                <select
+                  value={selectedCamera}
+                  onChange={async (e) => {
+                    const newCameraId = e.target.value;
+                    setSelectedCamera(newCameraId);
+                    
+                    // Restart scanner with new camera
+                    if (scannerRef.current && scannerRef.current.isScanning) {
+                      try {
+                        await scannerRef.current.stop();
+                        
+                        // Small delay to ensure camera is released
+                        setTimeout(async () => {
+                          try {
+                            const config = {
+                              fps: 10,
+                              qrbox: { width: 250, height: 250 },
+                              aspectRatio: 1.0,
+                              showTorchButtonIfSupported: true,
+                              showZoomSliderIfSupported: true,
+                              defaultZoomValueIfSupported: 2,
+                            };
+                            
+                            await scannerRef.current.start(
+                              { deviceId: { exact: newCameraId } },
+                              config,
+                              handleScanSuccess,
+                              handleScanError
+                            );
+                          } catch (restartError) {
+                            console.error('Error restarting with new camera:', restartError);
+                            setError('Failed to switch camera. Please stop and start again.');
+                          }
+                        }, 500);
+                      } catch (stopError) {
+                        console.error('Error stopping scanner for camera switch:', stopError);
+                      }
+                    }
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm"
+                >
+                  {cameras.map((camera, index) => {
+                    const label = camera.label || `Camera ${index + 1}`;
+                    const deviceId = camera.deviceId.toLowerCase();
+                    
+                    // Enhanced camera type detection for Samsung S24 and other devices
+                    let displayLabel = label;
+                    let cameraType = '';
+                    
+                    // Samsung S24 specific detection
+                    if (deviceId.includes('camera2') && deviceId.includes('0')) {
+                      cameraType = 'Main';
+                      displayLabel = `📷 ${label} (Main Camera - Best for QR)`;
+                    } else if (deviceId.includes('camera2') && deviceId.includes('2')) {
+                      cameraType = 'Ultra-wide';
+                      displayLabel = `📐 ${label} (Ultra-wide - Not recommended)`;
+                    } else if (deviceId.includes('camera2') && deviceId.includes('1')) {
+                      cameraType = 'Telephoto';
+                      displayLabel = `🔍 ${label} (Telephoto)`;
+                    }
+                    // Generic detection fallback
+                    else if (label.toLowerCase().includes('ultra')) {
+                      cameraType = 'Ultra-wide';
+                      displayLabel = `📐 ${label} (Ultra-wide)`;
+                    } else if (label.toLowerCase().includes('tele')) {
+                      cameraType = 'Telephoto';
+                      displayLabel = `🔍 ${label} (Telephoto)`;
+                    } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
+                      cameraType = 'Main';
+                      displayLabel = `📷 ${label} (Main)`;
+                    } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes('user')) {
+                      cameraType = 'Front';
+                      displayLabel = `🤳 ${label} (Front)`;
+                    }
+                    
+                    return (
+                      <option key={camera.deviceId} value={camera.deviceId}>
+                        {displayLabel}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+
+            <div className="flex gap-2">
               <button
-                onClick={getCameras}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex-shrink-0"
-                title="Refresh camera list"
+                className="beer-button flex-1"
+                onClick={() => setShowManual(!showManual)}
               >
-                🔄
+                {showManual ? 'Hide Manual Entry' : 'Enter Address Manually'}
               </button>
+              
+              <button
+                className="beer-button-secondary flex-1"
+                onClick={stopScanner}
+              >
+                Stop Camera
+              </button>
+              
+              {cameras.length > 0 && (
+                <button
+                  onClick={getCameras}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex-shrink-0"
+                  title="Refresh camera list"
+                >
+                  🔄
+                </button>
+              )}
+            </div>
+            
+            {/* Manual entry form below camera */}
+            {showManual && (
+              <form onSubmit={handleManualSubmit} className="mt-4">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Ethereum Address</label>
+                  <input
+                    type="text"
+                    className="beer-input w-full"
+                    placeholder="0x..."
+                    value={manualAddress}
+                    onChange={(e) => setManualAddress(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                {isTrusted && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Username (for registration approval)</label>
+                    <input
+                      type="text"
+                      className="beer-input w-full"
+                      placeholder="Enter username"
+                      value={manualUsername}
+                      onChange={(e) => setManualUsername(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only needed if approving a new user registration
+                    </p>
+                  </div>
+                )}
+                
+                <button
+                  type="submit"
+                  className="beer-button w-full"
+                >
+                  Submit
+                </button>
+              </form>
             )}
           </div>
         </div>
