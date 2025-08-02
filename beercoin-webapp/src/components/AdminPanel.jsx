@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
+import walletService from '../lib/walletService';
 import contractServiceV2 from '../lib/contractServiceV2';
 
 const AdminPanel = () => {
-  const { wallet } = useWallet();
+  const { wallet, setWallet } = useWallet();
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Private key login state
+  const [showPrivateKeyLogin, setShowPrivateKeyLogin] = useState(false);
+  const [privateKey, setPrivateKey] = useState('');
+  const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
 
   // Contract state
   const [distributionActive, setDistributionActive] = useState(false);
@@ -103,6 +109,32 @@ const AdminPanel = () => {
       setError('');
       setSuccess('');
     }, 5000);
+  };
+
+  // Handle private key login
+  const handlePrivateKeyLogin = async (e) => {
+    e.preventDefault();
+    try {
+      setPrivateKeyLoading(true);
+      setError('');
+      
+      const walletData = walletService.importFromPrivateKey(privateKey);
+      
+      // Update the wallet context
+      setWallet(walletData);
+      
+      // Clear the private key input
+      setPrivateKey('');
+      setShowPrivateKeyLogin(false);
+      
+      setSuccess('Wallet imported successfully!');
+      
+    } catch (error) {
+      console.error('Error importing wallet:', error);
+      setError(error.message || 'Failed to import wallet');
+    } finally {
+      setPrivateKeyLoading(false);
+    }
   };
 
   const handleAddTrustedUser = async (e) => {
@@ -319,8 +351,74 @@ const AdminPanel = () => {
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">🔐</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Panel</h1>
-          <p className="text-gray-600">Please connect your wallet to access the admin panel.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Panel</h1>
+          
+          {!showPrivateKeyLogin ? (
+            <>
+              <p className="text-gray-600 mb-6">Please connect your wallet to access the admin panel.</p>
+              <button
+                onClick={() => setShowPrivateKeyLogin(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+              >
+                <span className="mr-2">🔑</span>
+                Login with Private Key
+              </button>
+            </>
+          ) : (
+            <form onSubmit={handlePrivateKeyLogin} className="space-y-4">
+              <div className="text-left">
+                <label htmlFor="privateKey" className="block text-sm font-medium text-gray-700 mb-2">
+                  Private Key
+                </label>
+                <input
+                  type="password"
+                  id="privateKey"
+                  value={privateKey}
+                  onChange={(e) => setPrivateKey(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your private key..."
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPrivateKeyLogin(false);
+                    setPrivateKey('');
+                    setError('');
+                  }}
+                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={privateKeyLoading || !privateKey}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  {privateKeyLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    'Login'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+          
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
         </div>
       </div>
     );
