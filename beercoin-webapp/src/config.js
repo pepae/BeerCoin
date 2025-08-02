@@ -2,7 +2,7 @@
 
 // Contract addresses on Gnosis Chain (V2 NEW DEPLOYMENT - August 2, 2025)
 export const BEERCOIN_ADDRESS = "0x9277a6F60CC18E7119A9A52a78299b5e4c73C594";
-export const DISTRIBUTOR_ADDRESS = "0xa128F50Fe7D1d5d839E5723f08B7F0f66D8479737";
+export const DISTRIBUTOR_ADDRESS = "0xAfaFd3DC23bA8762384478d0e840c9Cb2D788c35";
 
 // Network configuration
 export const NETWORK_CONFIG = {
