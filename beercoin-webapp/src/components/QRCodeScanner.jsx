@@ -23,19 +23,41 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       setCameras(videoDevices);
       
-      // Prioritize main back camera over ultra-wide
-      // Look for main camera first (avoid ultra-wide which is often default)
+      // Enhanced Samsung S24 detection - camera2 0 is main, camera2 2 is ultra-wide
       const mainBackCamera = videoDevices.find(device => {
+        const deviceId = device.deviceId.toLowerCase();
         const label = device.label.toLowerCase();
+        
+        // Samsung S24 specific: camera2 0 is main camera
+        if (deviceId.includes('camera2') && deviceId.includes('0')) {
+          return true;
+        }
+        
+        // Generic main camera detection
         return (label.includes('back') || label.includes('rear') || label.includes('environment')) &&
-               (label.includes('main') || label.includes('wide') && !label.includes('ultra'));
+               (label.includes('main') || (label.includes('wide') && !label.includes('ultra')));
+      });
+      
+      // Samsung S24 ultra-wide is camera2 2 - avoid this for QR scanning
+      const ultraWideCamera = videoDevices.find(device => {
+        const deviceId = device.deviceId.toLowerCase();
+        const label = device.label.toLowerCase();
+        
+        return (deviceId.includes('camera2') && deviceId.includes('2')) || 
+               label.includes('ultra');
       });
       
       // If no main camera, look for any back camera that's NOT ultra-wide
       const backCameraNoUltra = videoDevices.find(device => {
+        const deviceId = device.deviceId.toLowerCase();
         const label = device.label.toLowerCase();
-        return (label.includes('back') || label.includes('rear') || label.includes('environment')) &&
-               !label.includes('ultra');
+        
+        // Skip ultra-wide cameras
+        if ((deviceId.includes('camera2') && deviceId.includes('2')) || label.includes('ultra')) {
+          return false;
+        }
+        
+        return label.includes('back') || label.includes('rear') || label.includes('environment');
       });
       
       // Fallback to any back camera
@@ -55,17 +77,28 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
         setSelectedCamera(videoDevices[0].deviceId);
       }
       
-      console.log('Available cameras:', videoDevices.map(d => d.label));
+      console.log('Available cameras:', videoDevices.map(d => `${d.label} (${d.deviceId})`));
       console.log('Selected camera:', mainBackCamera?.label || backCameraNoUltra?.label || anyBackCamera?.label || videoDevices[0]?.label);
+      console.log('Ultra-wide camera detected:', ultraWideCamera?.label || 'None');
     } catch (err) {
       console.error('Error getting cameras:', err);
       setError('Failed to get camera list');
     }
   };
 
-  // Initialize cameras on component mount
+  // Initialize cameras on component mount and auto-start
   useEffect(() => {
-    getCameras();
+    const initializeCamera = async () => {
+      await getCameras();
+      // Auto-start camera after getting camera list
+      setTimeout(() => {
+        if (!scanning && !scannedData) {
+          startScanner();
+        }
+      }, 500); // Small delay to ensure camera selection is set
+    };
+    
+    initializeCamera();
   }, []);
 
   const [scanning, setScanning] = useState(false);
@@ -504,15 +537,35 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
               >
                 {cameras.map((camera, index) => {
                   const label = camera.label || `Camera ${index + 1}`;
-                  // Add helpful indicators for camera types
+                  const deviceId = camera.deviceId.toLowerCase();
+                  
+                  // Enhanced camera type detection for Samsung S24 and other devices
                   let displayLabel = label;
-                  if (label.toLowerCase().includes('ultra')) {
+                  let cameraType = '';
+                  
+                  // Samsung S24 specific detection
+                  if (deviceId.includes('camera2') && deviceId.includes('0')) {
+                    cameraType = 'Main';
+                    displayLabel = `📷 ${label} (Main Camera - Best for QR)`;
+                  } else if (deviceId.includes('camera2') && deviceId.includes('2')) {
+                    cameraType = 'Ultra-wide';
+                    displayLabel = `📐 ${label} (Ultra-wide - Not recommended)`;
+                  } else if (deviceId.includes('camera2') && deviceId.includes('1')) {
+                    cameraType = 'Telephoto';
+                    displayLabel = `🔍 ${label} (Telephoto)`;
+                  }
+                  // Generic detection fallback
+                  else if (label.toLowerCase().includes('ultra')) {
+                    cameraType = 'Ultra-wide';
                     displayLabel = `📐 ${label} (Ultra-wide)`;
                   } else if (label.toLowerCase().includes('tele')) {
+                    cameraType = 'Telephoto';
                     displayLabel = `🔍 ${label} (Telephoto)`;
                   } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
+                    cameraType = 'Main';
                     displayLabel = `📷 ${label} (Main)`;
                   } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes('user')) {
+                    cameraType = 'Front';
                     displayLabel = `🤳 ${label} (Front)`;
                   }
                   
@@ -524,7 +577,7 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
                 })}
               </select>
               <p className="text-xs text-muted-foreground mt-1">
-                📷 Main camera recommended for QR scanning
+                📷 Main camera (camera2 0) recommended for QR scanning on Samsung S24
               </p>
             </div>
           )}
@@ -641,15 +694,35 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
               >
                 {cameras.map((camera, index) => {
                   const label = camera.label || `Camera ${index + 1}`;
-                  // Add helpful indicators for camera types
+                  const deviceId = camera.deviceId.toLowerCase();
+                  
+                  // Enhanced camera type detection for Samsung S24 and other devices
                   let displayLabel = label;
-                  if (label.toLowerCase().includes('ultra')) {
+                  let cameraType = '';
+                  
+                  // Samsung S24 specific detection
+                  if (deviceId.includes('camera2') && deviceId.includes('0')) {
+                    cameraType = 'Main';
+                    displayLabel = `📷 ${label} (Main Camera - Best for QR)`;
+                  } else if (deviceId.includes('camera2') && deviceId.includes('2')) {
+                    cameraType = 'Ultra-wide';
+                    displayLabel = `📐 ${label} (Ultra-wide - Not recommended)`;
+                  } else if (deviceId.includes('camera2') && deviceId.includes('1')) {
+                    cameraType = 'Telephoto';
+                    displayLabel = `🔍 ${label} (Telephoto)`;
+                  }
+                  // Generic detection fallback
+                  else if (label.toLowerCase().includes('ultra')) {
+                    cameraType = 'Ultra-wide';
                     displayLabel = `📐 ${label} (Ultra-wide)`;
                   } else if (label.toLowerCase().includes('tele')) {
+                    cameraType = 'Telephoto';
                     displayLabel = `🔍 ${label} (Telephoto)`;
                   } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
+                    cameraType = 'Main';
                     displayLabel = `📷 ${label} (Main)`;
                   } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes('user')) {
+                    cameraType = 'Front';
                     displayLabel = `🤳 ${label} (Front)`;
                   }
                   
@@ -676,7 +749,7 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
               className="beer-button-secondary flex-1"
               onClick={stopScanner}
             >
-              Cancel
+              Stop Camera
             </button>
             
             {cameras.length > 0 && (
