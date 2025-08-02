@@ -15,6 +15,59 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
     }, 5000); // check every 5 seconds
     return () => clearInterval(interval);
   }, [isTrusted]);
+
+  // Get available cameras
+  const getCameras = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      setCameras(videoDevices);
+      
+      // Prioritize main back camera over ultra-wide
+      // Look for main camera first (avoid ultra-wide which is often default)
+      const mainBackCamera = videoDevices.find(device => {
+        const label = device.label.toLowerCase();
+        return (label.includes('back') || label.includes('rear') || label.includes('environment')) &&
+               (label.includes('main') || label.includes('wide') && !label.includes('ultra'));
+      });
+      
+      // If no main camera, look for any back camera that's NOT ultra-wide
+      const backCameraNoUltra = videoDevices.find(device => {
+        const label = device.label.toLowerCase();
+        return (label.includes('back') || label.includes('rear') || label.includes('environment')) &&
+               !label.includes('ultra');
+      });
+      
+      // Fallback to any back camera
+      const anyBackCamera = videoDevices.find(device => {
+        const label = device.label.toLowerCase();
+        return label.includes('back') || label.includes('rear') || label.includes('environment');
+      });
+      
+      // Set priority: main back > back non-ultra > any back > first available
+      if (mainBackCamera) {
+        setSelectedCamera(mainBackCamera.deviceId);
+      } else if (backCameraNoUltra) {
+        setSelectedCamera(backCameraNoUltra.deviceId);
+      } else if (anyBackCamera) {
+        setSelectedCamera(anyBackCamera.deviceId);
+      } else if (videoDevices.length > 0) {
+        setSelectedCamera(videoDevices[0].deviceId);
+      }
+      
+      console.log('Available cameras:', videoDevices.map(d => d.label));
+      console.log('Selected camera:', mainBackCamera?.label || backCameraNoUltra?.label || anyBackCamera?.label || videoDevices[0]?.label);
+    } catch (err) {
+      console.error('Error getting cameras:', err);
+      setError('Failed to get camera list');
+    }
+  };
+
+  // Initialize cameras on component mount
+  useEffect(() => {
+    getCameras();
+  }, []);
+
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState(null);
   const [error, setError] = useState('');
@@ -23,6 +76,8 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
   const [manualAddress, setManualAddress] = useState('');
   const [manualUsername, setManualUsername] = useState('');
   const [showManual, setShowManual] = useState(false);
+  const [cameras, setCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState('');
   const scannerRef = useRef(null);
   const scannerContainerRef = useRef(null);
 
@@ -129,11 +184,19 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
       };
       
       // Try different camera constraints
-      const cameraConstraints = [
+      const cameraConstraints = [];
+      
+      // If a specific camera is selected, use it first
+      if (selectedCamera) {
+        cameraConstraints.push({ deviceId: { exact: selectedCamera } });
+      }
+      
+      // Fallback options
+      cameraConstraints.push(
         { facingMode: 'environment' }, // Back camera
         { facingMode: 'user' },        // Front camera
         true                           // Any camera
-      ];
+      );
       
       let scannerStarted = false;
       for (const constraint of cameraConstraints) {
@@ -428,6 +491,44 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
       
       {!scanning && !scannedData && (
         <div>
+          {/* Camera Selection */}
+          {cameras.length > 1 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Camera:
+              </label>
+              <select
+                value={selectedCamera}
+                onChange={(e) => setSelectedCamera(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
+              >
+                {cameras.map((camera, index) => {
+                  const label = camera.label || `Camera ${index + 1}`;
+                  // Add helpful indicators for camera types
+                  let displayLabel = label;
+                  if (label.toLowerCase().includes('ultra')) {
+                    displayLabel = `📐 ${label} (Ultra-wide)`;
+                  } else if (label.toLowerCase().includes('tele')) {
+                    displayLabel = `🔍 ${label} (Telephoto)`;
+                  } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
+                    displayLabel = `📷 ${label} (Main)`;
+                  } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes('user')) {
+                    displayLabel = `🤳 ${label} (Front)`;
+                  }
+                  
+                  return (
+                    <option key={camera.deviceId} value={camera.deviceId}>
+                      {displayLabel}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                📷 Main camera recommended for QR scanning
+              </p>
+            </div>
+          )}
+
           <button
             className="beer-button w-full mb-4"
             onClick={startScanner}
@@ -491,6 +592,77 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
       
       {scanning && (
         <div>
+          {/* Camera Selection while scanning */}
+          {cameras.length > 1 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Switch Camera:
+              </label>
+              <select
+                value={selectedCamera}
+                onChange={async (e) => {
+                  const newCameraId = e.target.value;
+                  setSelectedCamera(newCameraId);
+                  
+                  // Restart scanner with new camera
+                  if (scannerRef.current && scannerRef.current.isScanning) {
+                    try {
+                      await scannerRef.current.stop();
+                      
+                      // Small delay to ensure camera is released
+                      setTimeout(async () => {
+                        try {
+                          const config = {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0,
+                            showTorchButtonIfSupported: true,
+                            showZoomSliderIfSupported: true,
+                            defaultZoomValueIfSupported: 2,
+                          };
+                          
+                          await scannerRef.current.start(
+                            { deviceId: { exact: newCameraId } },
+                            config,
+                            handleScanSuccess,
+                            handleScanError
+                          );
+                        } catch (restartError) {
+                          console.error('Error restarting with new camera:', restartError);
+                          setError('Failed to switch camera. Please stop and start again.');
+                        }
+                      }, 500);
+                    } catch (stopError) {
+                      console.error('Error stopping scanner for camera switch:', stopError);
+                    }
+                  }
+                }}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm"
+              >
+                {cameras.map((camera, index) => {
+                  const label = camera.label || `Camera ${index + 1}`;
+                  // Add helpful indicators for camera types
+                  let displayLabel = label;
+                  if (label.toLowerCase().includes('ultra')) {
+                    displayLabel = `📐 ${label} (Ultra-wide)`;
+                  } else if (label.toLowerCase().includes('tele')) {
+                    displayLabel = `🔍 ${label} (Telephoto)`;
+                  } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
+                    displayLabel = `📷 ${label} (Main)`;
+                  } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes('user')) {
+                    displayLabel = `🤳 ${label} (Front)`;
+                  }
+                  
+                  return (
+                    <option key={camera.deviceId} value={camera.deviceId}>
+                      {displayLabel}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
           <div 
             className="beer-scanner-container" 
             ref={scannerContainerRef}
@@ -499,12 +671,24 @@ const QRCodeScanner = ({ setActivePage, setPrefilledSendData }) => {
             {/* Scanner will be inserted here */}
           </div>
           
-          <button
-            className="beer-button-secondary w-full mt-4"
-            onClick={stopScanner}
-          >
-            Cancel
-          </button>
+          <div className="flex gap-2 mt-4">
+            <button
+              className="beer-button-secondary flex-1"
+              onClick={stopScanner}
+            >
+              Cancel
+            </button>
+            
+            {cameras.length > 0 && (
+              <button
+                onClick={getCameras}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex-shrink-0"
+                title="Refresh camera list"
+              >
+                🔄
+              </button>
+            )}
+          </div>
         </div>
       )}
       
